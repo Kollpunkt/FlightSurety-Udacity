@@ -14,21 +14,119 @@ contract('Flight Surety Tests', async (accounts) => {
   /* Operations and Settings                                                              */
   /****************************************************************************************/
 
-  it(`(multiparty) has correct initial isOperational() value`, async function () {
+  it(`1a) (multiparty) direct call to data contract is denied`, async function () {
+
+    let accessDenied = false;
+    try 
+    {
+        let status = await config.flightSuretyData.isOperational.call();
+    }
+    catch(e) {
+        accessDenied = true;
+    }
+    assert.equal(accessDenied, true, "Data contract function isOperational could be accessed directly");
+
+  });
+
+  it(`1b) (multiparty) call through App contract is granted and  correct initial isOperational() value is`, async function () {
 
     // Get operating status
-    let status = await config.flightSuretyData.isOperational.call();
+    let status = await config.flightSuretyApp.isOperationalApp.call();
     assert.equal(status, true, "Incorrect initial operating status value");
 
   });
 
-  it(`(multiparty) can block access to setOperatingStatus() for non-Contract Owner account`, async function () {
+  it(`2) First 4 airlines can be registered without voting`, async function () {
+    //register airlines
+    await config.flightSuretyApp.registerAirlineApp(config.testAddresses[1], "Airline 1", { from: config.testAddresses[0] });      
+    await config.flightSuretyApp.registerAirlineApp(config.testAddresses[2], "Airline 2", { from: config.testAddresses[1] });
+    await config.flightSuretyApp.registerAirlineApp(config.testAddresses[3], "Airline 3", { from: config.testAddresses[2] });
+    // As Contract owner is first Airline these three are enough
+    
+    //Check whether airlines were registered
+    let successA1 = await config.flightSuretyData.isVotingAirline(config.testAddresses[1]);
+    let successA2 = await config.flightSuretyData.isVotingAirline(config.testAddresses[2]); 
+    let successA3 = await config.flightSuretyData.isVotingAirline(config.testAddresses[3]);  
+
+    // assert
+    assert.equal(successA1, true, "Airline 1 could not be registered");
+    assert.equal(successA2, true, "Airline 2 could not be registered");
+    assert.equal(successA3, true, "Airline 3 could not be registered");
+     
+  
+    });
+    
+    it(`3) Fifth airline cannot be registered without voting`, async function () {
+        //register airlines
+        await config.flightSuretyApp.registerAirlineApp(config.testAddresses[4], "Airline 4", { from: config.testAddresses[0] });      
+
+        let successA4 = await config.flightSuretyData.isVotingAirline(config.testAddresses[4]);
+
+        assert.equal(successA4, false, "Airline 4 could be registered without a vote");
+      
+    });
+    it(`4) Funding: paying less than required amount returns money and does not change funding status`, async function () {
+        //register airlines
+        let isFunded = await config.flightSuretyData.isFundedAirline(config.testAddresses[1]);      
+        console.log(isFunded)
+        // let successA4 = await config.flightSuretyData.isVotingAirline(config.testAddresses[4]);
+
+        // assert.equal(successA4, false, "Airline 4 could be registered without a vote");
+      
+    });
+
+    it(`5a) Airline voting: Fifth airline cannot be registered with only one vote`, async function () {
+        
+        await config.flightSuretyApp.voteAirlineInApp(config.testAddresses[4], { from: config.testAddresses[1] });
+
+
+        let successA4a = await config.flightSuretyData.isVotingAirline(config.testAddresses[4]);
+
+
+        assert.equal(successA4a, false, "Airline 4 could be registered without a vote"); 
+    });
+
+    it(`5b) Airline voting: Fifth airline cannot be registered with a double vote by same airline`, async function () {
+        var votingDenied = false; 
+        try {
+            await config.flightSuretyApp.voteAirlineInApp(config.testAddresses[4], { from: config.testAddresses[1] }); 
+        }
+        catch(e) {
+            var votingDenied = true;
+        }
+        
+        assert.equal(votingDenied, true, "Airline 4 could be registered without a vote"); 
+    });
+
+    it(`5c) Airline voting: Fifth airline can be registered with a second vote out of four airlines)`, async function () {
+        
+
+        await config.flightSuretyApp.voteAirlineInApp(config.testAddresses[4], { from: config.testAddresses[2] });
+        //await config.flightSuretyApp.voteAirlineInApp(config.testAddresses[4], { from: config.testAddresses[3] });
+        let successA4b = await config.flightSuretyData.isVotingAirline(config.testAddresses[4]);
+
+
+        assert.equal(successA4b, true, "Airline 4 could be registered without a vote"); 
+    });
+    it(`5d) Airline voting: Another vote (3rd of 4) for fifth airline runs into error that voting is closed`, async function () {
+        var votingsuccess = true;
+        try 
+        {
+            await config.flightSuretyApp.voteAirlineInApp(config.testAddresses[4], { from: config.testAddresses[3] })
+        }
+        catch(e) {
+            var votingsuccess = false;
+        } 
+
+        assert.equal(votingsuccess, false, "Third out of four votes did not return error due to voting being closed"); 
+    });
+  it(`5) (multiparty) can block access to setOperatingStatus() for non-Contract Owner account`, async function () {
 
       // Ensure that access is denied for non-Contract Owner account
       let accessDenied = false;
       try 
       {
-          await config.flightSuretyData.setOperatingStatus(false, { from: config.testAddresses[2] });
+          await config.flightSuretyApp.setOperatingStatusApp(false, { from: config.testAddresses[2] });
       }
       catch(e) {
           accessDenied = true;
@@ -37,24 +135,46 @@ contract('Flight Surety Tests', async (accounts) => {
             
   });
 
-  it(`(multiparty) can allow access to setOperatingStatus() for Contract Owner account`, async function () {
+  it(`6) Fifth airline cannot vote without funding`, async function () 
+   {       
+    });
 
-      // Ensure that access is allowed for Contract Owner account
-      let accessDenied = false;
-      try 
-      {
-          await config.flightSuretyData.setOperatingStatus(false);
-      }
-      catch(e) {
-          accessDenied = true;
-      }
-      assert.equal(accessDenied, false, "Access not restricted to Contract Owner");
+  it(`7) Fifth airline can be funded and then can vote`, async function () 
+  {       
+  });
+ 
+  it(`8) (multiparty) can change operating status with setOperatingStatus() with M=2`, async function () {        
+        //two registered airlines vot for "false"
+        await config.flightSuretyApp.setOperatingStatusApp(false, { from: config.testAddresses[1] });
+        await config.flightSuretyApp.setOperatingStatusApp(false, { from: config.testAddresses[2] });
+
+        //status changed to false
+        let status = true;
+        status = await config.flightSuretyApp.isOperationalApp.call();
+        assert.equal(status, false, "Operating status value did not change from true to false"); 
       
   });
 
+  it(`9) (multiparty) cannot activate setOperatingStatus() with M=1`, async function () {
+    //
+    // await config.flightSuretyApp.registerAirlineApp(config.testAddresses[1], "Airline 1", { from: config.testAddresses[0] });      
+    // await config.flightSuretyApp.registerAirlineApp(config.testAddresses[2], "Airline 2", { from: config.testAddresses[1] });
+    
+    let beginnStatus = true;
+    beginnStatus = await config.flightSuretyApp.isOperationalApp.call();
+  
+    await config.flightSuretyApp.setOperatingStatusApp(!beginnStatus, { from: config.testAddresses[1] });
+
+
+    let endStatus = true;
+    endStatus = await config.flightSuretyApp.isOperationalApp.call();
+    assert.equal(endStatus, beginnStatus, "Operating status value did not change from true to false"); 
+  
+});
+
   it(`(multiparty) can block access to functions using requireIsOperational when operating status is false`, async function () {
 
-      await config.flightSuretyData.setOperatingStatus(false);
+      await config.flightSuretyApp.setOperatingStatusApp(false);
 
       let reverted = false;
       try 
