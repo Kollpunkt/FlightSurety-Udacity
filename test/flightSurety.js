@@ -44,9 +44,9 @@ contract('Flight Surety Tests', async (accounts) => {
     // As Contract owner is first Airline these three are enough
     
     //Check whether airlines were registered
-    let successA1 = await config.flightSuretyData.isVotingAirline(config.testAddresses[1]);
-    let successA2 = await config.flightSuretyData.isVotingAirline(config.testAddresses[2]); 
-    let successA3 = await config.flightSuretyData.isVotingAirline(config.testAddresses[3]);  
+    let successA1 = await config.flightSuretyData.isAcceptedAirline(config.testAddresses[1]);
+    let successA2 = await config.flightSuretyData.isAcceptedAirline(config.testAddresses[2]); 
+    let successA3 = await config.flightSuretyData.isAcceptedAirline(config.testAddresses[3]);  
 
     // assert
     assert.equal(successA1, true, "Airline 1 could not be registered");
@@ -65,13 +65,78 @@ contract('Flight Surety Tests', async (accounts) => {
         assert.equal(successA4, false, "Airline 4 could be registered without a vote");
       
     });
-    it(`4) Funding: paying less than required amount returns money and does not change funding status`, async function () {
-        //register airlines
+    it(`4a) Funding: paying less than required amount returns money and does not change funding status`, async function () {
+        let fundingReverted = false;
+        try 
+        {
+            let status = await config.flightSuretyApp.fundAirlineApp(config.testAddresses[1], {value: 9, from: config.testAddresses[1]});
+        }
+        catch(e) {
+            fundingReverted = true;
+        }
+    
+        //Check that isFunded is stille false
         let isFunded = await config.flightSuretyData.isFundedAirline(config.testAddresses[1]);      
-        console.log(isFunded)
-        // let successA4 = await config.flightSuretyData.isVotingAirline(config.testAddresses[4]);
+        
+        assert.equal(fundingReverted, true, "Airline 1 Funding was not reverted despite too low funding");
+        assert.equal(isFunded, false, "Airline 1 Funding status changed despite too low funding");
 
-        // assert.equal(successA4, false, "Airline 4 could be registered without a vote");
+      
+    });
+    it(`4b) Funding: Funding is possible with right funding amount`, async function () {
+        let fundingReverted = false;
+        try 
+        {
+            let fundingReverted = await config.flightSuretyApp.fundAirlineApp(config.testAddresses[1], {value: 10, from: config.testAddresses[1], gasPrice: 0});
+        }
+        catch(e) {
+            fundingReverted = true;
+        }
+    
+        //Check that isFunded changed to true
+        let isFunded = await config.flightSuretyData.isFundedAirline(config.testAddresses[1]);      
+        
+        assert.equal(fundingReverted, false, "Airline 1 Funding was reverted despite the correct funding");
+        assert.equal(isFunded, true, "Airline 1 Funding status did not changed to true despite correct funding");
+
+      
+    });
+    it(`4c) Funding: Funding is accumulated in contract`, async function () {
+        let dataContractValueBegin = await web3.eth.getBalance(config.flightSuretyData.address);
+
+        await config.flightSuretyApp.fundAirlineApp(config.testAddresses[2], {value: 12, from: config.testAddresses[2], gasPrice: 0}); 
+        await config.flightSuretyApp.fundAirlineApp(config.testAddresses[3], {value: 10, from: config.testAddresses[3], gasPrice: 0});
+
+        let dataContractValueEnd = await web3.eth.getBalance(config.flightSuretyData.address);
+
+
+        //Check that isFunded changed to true
+        let isFunded2 = await config.flightSuretyData.isFundedAirline(config.testAddresses[2]);
+        let isFunded3 = await config.flightSuretyData.isFundedAirline(config.testAddresses[3]);  
+        
+        assert.equal(dataContractValueEnd - dataContractValueBegin, 20, "Not the right amount accumlated after 2 further fundings");
+        assert.equal(isFunded2, true, "Airline 2 Funding status did not changed to true despite correct funding");
+        assert.equal(isFunded3, true, "Airline 3 Funding status did not changed to true despite correct funding");
+
+      
+    });
+
+    it(`4d) Funding: Fifth airline can be funded before being accepted/ voted in`, async function () {
+        let dataContractValueBegin = await web3.eth.getBalance(config.flightSuretyData.address);
+        console.log(dataContractValueBegin);
+        await config.flightSuretyApp.fundAirlineApp(config.testAddresses[4], {value: 10, from: config.testAddresses[4], gasPrice: 0}); 
+
+        let dataContractValueEnd = await web3.eth.getBalance(config.flightSuretyData.address);
+        console.log(dataContractValueEnd);
+
+        //Check that isFunded changed to true
+        let isFunded4 = await config.flightSuretyData.isFundedAirline(config.testAddresses[4]);
+
+        
+        assert.equal(dataContractValueEnd - dataContractValueBegin, 10, "Not the right amount accumlated after 2 further fundings");
+        assert.equal(isFunded4, true, "Fifth airline funding status did not changed to true despite correct funding");
+
+
       
     });
 

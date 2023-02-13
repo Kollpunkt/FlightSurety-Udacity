@@ -192,6 +192,23 @@ contract FlightSuretyApp {
         flightSuretyData.voteAirlineIn(airlineCastedVoteFor, msg.sender);   
     }
 
+    function fundAirlineApp
+                            (
+                                address airline
+                            )
+                            public
+                            payable
+    {
+        // Airline must be registered first
+        require(msg.value >= airlineFundingRequirement, "Not sufficient funds sent");
+
+        uint256 overpaid = msg.value.sub(airlineFundingRequirement);
+        msg.sender.transfer(overpaid);
+
+        flightSuretyData.fundAirline.value(airlineFundingRequirement)(airline);
+
+    }
+
 
 // region ORACLE MANAGEMENT
 
@@ -367,6 +384,16 @@ contract FlightSuretyApp {
 }   
 
 contract FlightSuretyData {
+    function fundAirline
+                            (
+                                address airline
+                            )
+                            public
+                            payable
+    {
+    }
+ 
+    
     function voteAirlineIn
                             (
                                 address airlineCastedVoteFor,

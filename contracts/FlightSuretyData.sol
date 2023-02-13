@@ -253,7 +253,7 @@ contract FlightSuretyData {
         airlineCount = airlineCount.add(1);
         airlines[airlineAddress].ID = airlineCount;
         airlines[airlineAddress].name = name;
-        airlines[airlineAddress].isFunded = true;
+        airlines[airlineAddress].isFunded = false;
         
         //The first four airlines are registered/accepted without a vote
         if (airlineCount<=4) {
@@ -368,26 +368,23 @@ contract FlightSuretyData {
     *      resulting in insurance payouts, the contract should be self-sustaining
     *
     */   
-    function fund
+    function fundAirline
                             (
-                                address airline,
-                                uint256 fundingAmount,
-                                uint256 fundingRequirement   
+                                address airline
                             )
                             public
                             payable
                             requireCallerAuthorized
+                            requireIsOperational
     {
         // Airline must be registered first
-        require(airlines[airline].ID != 0, "No data for this airline");
+        require(airlines[airline].ID != 0, "No data for this airline yet. Please register airline first.");
         // Avoid double funding
-        require(airlines[airline].isFunded=false,"Airline is already fully funded");
-        // Ensure funding is sufficient and partial funding
-        require(fundingAmount>=fundingRequirement, "Funding not sufficient. Not partial funding allowed. Funding requirement ="+fundingRequirement);
+        require(airlines[airline].isFunded=true,"airline is already fully funded.");
+        
+        airlines[airline].isFunded = true;
         
 
-        uint amountToReturn = msg.value - _price;
-        _buyer.transfer(amountToReturn);
     }
 
     function getFlightKey
@@ -411,7 +408,7 @@ contract FlightSuretyData {
                             external 
                             payable 
     {
-        fund();
+
     }
 
 
