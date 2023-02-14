@@ -1,4 +1,5 @@
 pragma solidity >=0.4.25;
+//pragma experimental ABIEncoderV2;
 
 // It's important to avoid vulnerabilities due to numeric overflow bugs
 // OpenZeppelin's SafeMath library, when used correctly, protects agains such bugs
@@ -33,13 +34,18 @@ contract FlightSuretyApp {
     //Risk assessment: because airline needs to be voted in (set in data contract) risk of being manipulated on way to data contract with low relevance
     uint256 airlineFundingRequirement = 10;
 
-    struct Flight {
+    uint256 payOutMultiple = 150;  // amount to be paid out = paid in amount * payOutMultiple / 100
+    uint256 maxInsurancePayOut = payOutMultiple.mul(10).div(100); // Requirement that max 1 ether is insured per passenger per flight 
+    
+    struct flightStructType {
+       bytes32 flightID;
+        string flightName;
         bool isRegistered;
         uint8 statusCode;
         uint256 updatedTimestamp;        
         address airline;
     }
-    mapping(bytes32 => Flight) private flights;
+    mapping(bytes32 => flightStructType) private flights;
 
  
     /********************************************************************************************/
@@ -70,6 +76,8 @@ contract FlightSuretyApp {
         _;
     }
 
+    
+
     /********************************************************************************************/
     /*                                       CONSTRUCTOR                                        */
     /********************************************************************************************/
@@ -99,7 +107,9 @@ contract FlightSuretyApp {
     {
         return true;  // Modify to call data contract's status
     }
-
+    function getFlightKey(string memory _flightName) pure internal returns(bytes32) {
+        return keccak256(abi.encodePacked(_flightName));
+    }
     /********************************************************************************************/
     /*                                     SMART CONTRACT FUNCTIONS                             */
     /********************************************************************************************/
@@ -112,12 +122,46 @@ contract FlightSuretyApp {
     */  
     function registerFlight
                                 (
+                                    string calldata flightName     
                                 )
                                 external
-                                pure
+                                requireIsOperational
     {
+        require(flightSuretyData.isVotingAirline(msg.sender),"Airline is not yet fully funded and voted in.");
+        bytes32 _flightID = getFlightKey(flightName);
+        require(!flights[_flightID].isRegistered,"Flight already registered");
 
+        flights[_flightID].flightID = _flightID;
+         
+        flights[_flightID].isRegistered = true;
+        flights[_flightID].flightName = flightName;
+        flights[_flightID].statusCode = STATUS_CODE_UNKNOWN;
+        flights[_flightID].airline = msg.sender;
+    
     }
+
+    function getFlightInfo
+                                (
+                                    string calldata flightName
+                                )
+                                external
+                                view
+                                returns (bool, uint8, uint256, address, bytes32)
+    {
+        bytes32 _flightID = getFlightKey(flightName);
+        require(flights[_flightID].isRegistered,"Flight not yet registered");
+        return(
+            flights[_flightID].isRegistered,
+            flights[_flightID].statusCode,
+            flights[_flightID].updatedTimestamp,
+            flights[_flightID].airline,
+            flights[_flightID].flightID);
+
+            
+    
+    }
+
+
     
    /**
     * @dev Called after oracle has updated flight status
@@ -207,6 +251,22 @@ contract FlightSuretyApp {
 
         flightSuretyData.fundAirline.value(airlineFundingRequirement)(airline);
 
+    }
+
+    function buyInsuranceApp
+                            (         
+                                string calldata flightName
+
+                            )
+                            external
+                            payable
+    {
+        bytes32 _flightID = getFlightKey(flightName);
+        require(flights[_flightID].isRegistered,"Flight not yet registered");
+        uint256 alreadyPaidIn = flightSuretyData.getPayOutAmount(msg.sender, flightName);
+        uint256 addPayOut = msg.value.mul(payOutMultiple).div(100);
+        require(alreadyPaidIn.add(addPayOut) <= maxInsurancePayOut, "Additional insurance leads to overinsurance");
+        flightSuretyData.buyInsurance.value(msg.value)(msg.sender, _flightID, addPayOut);
     }
 
 
@@ -384,6 +444,29 @@ contract FlightSuretyApp {
 }   
 
 contract FlightSuretyData {
+    function getPayOutAmount
+                            (
+                                address passengerAddress, 
+                                string memory flightName
+                            ) 
+                            public 
+                            view 
+                            returns(uint256)
+    {
+    }
+    
+    function buyInsurance
+                            (         
+                                address passengerAddress,
+                                bytes32 flightID,
+                                uint256 addPayOutAmount
+
+                            )
+                            external
+                            payable
+    {
+    }
+    
     function fundAirline
                             (
                                 address airline
@@ -432,19 +515,11 @@ contract FlightSuretyData {
     {
     }
 
-
-   /**
-    * @dev Buy insurance for a flight
-    *
-    */   
-    function buy
-                            (                             
-                            )
-                            external
-                            payable
+    function isVotingAirline(address _address) public view returns(bool)
     {
-
     }
+
+
 
     /**
      *  @dev Credits payouts to insurees

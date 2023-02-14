@@ -16,20 +16,30 @@ contract FlightSuretyData {
         uint256 ID;                                                             // ID to identify airline
     }
 
-
     mapping(address => airlineStructType) private airlines;
 
-    uint256 airlineCount;                                                       // used to set ID
+    uint256 airlineCount;
+    
+    struct insuranceStructType {
+        // address passengerAddress;
+        //uint256 paidIn;
+        uint256 payOutAmount;
+    }
 
-    struct passengerStrucType{
-        address passengerAddress;
-        mapping (bytes32 => uint256) insuredFlights;
+    // mapping(bytes32 => passengerStrucType) private insurances;     //byes32 maps/refers to id of flight
+
+    struct passengerStructType{
+        mapping (bytes32 => insuranceStructType) insurances;
         uint256 credit;
     }
-    mapping(address => passengerStrucType) private passengers;
+    mapping(address => passengerStructType) private passengers;
 
-    
-    
+    struct flightStructType {
+        uint8 statusCode;
+        uint256 timeStamp;     
+    }
+
+    mapping (bytes32 => flightStructType) private flights;     //byes32 maps/refers to id of flight
     
     address private contractOwner;                                      // Account used to deploy contract
     
@@ -154,6 +164,12 @@ contract FlightSuretyData {
     }
 
 
+    function getPayOutAmount(address passengerAddress, string memory flightName) public view returns(uint256)
+    {
+        bytes32 flightID = getFlightKey(flightName);
+        return(passengers[passengerAddress].insurances[flightID].payOutAmount);
+    }
+
     /********************************************************************************************/
     /*                                 REFERENCE DATA APP CONTRACT  FUNCTIONS                   */
     /********************************************************************************************/
@@ -227,7 +243,9 @@ contract FlightSuretyData {
     }
 
     }
-
+    function getFlightKey(string memory _flightName) pure internal returns(bytes32) {
+        return keccak256(abi.encodePacked(_flightName));
+    }
     /********************************************************************************************/
     /*                                     SMART CONTRACT FUNCTIONS                             */
     /********************************************************************************************/
@@ -330,13 +348,21 @@ contract FlightSuretyData {
     * @dev Buy insurance for a flight
     *
     */   
-    function buy
-                            (                             
+    function buyInsurance
+                            (         
+                                address passengerAddress,
+                                bytes32 flightID,
+                                uint256 addPayOutAmount
+
                             )
                             external
                             payable
+                            requireCallerAuthorized
+                            requireIsOperational
     {
-
+        //passengers[passengerAddress].insurances[flightID].paidIn = msg.value;
+        uint256 beginPayOutAmount = passengers[passengerAddress].insurances[flightID].payOutAmount;
+        passengers[passengerAddress].insurances[flightID].payOutAmount = beginPayOutAmount.add(addPayOutAmount);        
     }
 
     /**
@@ -387,18 +413,18 @@ contract FlightSuretyData {
 
     }
 
-    function getFlightKey
-                        (
-                            address airline,
-                            string memory flight,
-                            uint256 timestamp
-                        )
-                        pure
-                        internal
-                        returns(bytes32) 
-    {
-        return keccak256(abi.encodePacked(airline, flight, timestamp));
-    }
+    // function getFlightKey
+    //                     (
+    //                         address airline,
+    //                         string memory flight,
+    //                         uint256 timestamp
+    //                     )
+    //                     pure
+    //                     internal
+    //                     returns(bytes32) 
+    // {
+    //     return keccak256(abi.encodePacked(airline, flight, timestamp));
+    // }
 
     /**
     * @dev Fallback function for funding smart contract.

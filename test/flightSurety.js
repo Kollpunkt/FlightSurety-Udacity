@@ -123,11 +123,11 @@ contract('Flight Surety Tests', async (accounts) => {
 
     it(`4d) Funding: Fifth airline can be funded before being accepted/ voted in`, async function () {
         let dataContractValueBegin = await web3.eth.getBalance(config.flightSuretyData.address);
-        console.log(dataContractValueBegin);
+        // console.log(dataContractValueBegin);
         await config.flightSuretyApp.fundAirlineApp(config.testAddresses[4], {value: 10, from: config.testAddresses[4], gasPrice: 0}); 
 
         let dataContractValueEnd = await web3.eth.getBalance(config.flightSuretyData.address);
-        console.log(dataContractValueEnd);
+        // console.log(dataContractValueEnd);
 
         //Check that isFunded changed to true
         let isFunded4 = await config.flightSuretyData.isFundedAirline(config.testAddresses[4]);
@@ -185,24 +185,134 @@ contract('Flight Surety Tests', async (accounts) => {
 
         assert.equal(votingsuccess, false, "Third out of four votes did not return error due to voting being closed"); 
     });
-  it(`5) (multiparty) can block access to setOperatingStatus() for non-Contract Owner account`, async function () {
+  it(`6a) Flight registration: Flight can be registered`, async function () {
+        let flightName = 'AL123';
+        await config.flightSuretyApp.registerFlight(flightName, {from: config.testAddresses[1]})
 
-      // Ensure that access is denied for non-Contract Owner account
-      let accessDenied = false;
-      try 
-      {
-          await config.flightSuretyApp.setOperatingStatusApp(false, { from: config.testAddresses[2] });
-      }
-      catch(e) {
-          accessDenied = true;
-      }
-      assert.equal(accessDenied, true, "Access not restricted to Contract Owner");
+        let flightData = await config.flightSuretyApp.getFlightInfo(flightName);
+        // console.log(flightData);
+
+        assert.equal(flightData[0], true,"isRegistered not correctly initialised");
+        assert.equal(flightData[3], config.testAddresses[1],"airline not correctly initialised");
+
             
   });
+  it(`6b) Flight registration: Flight cannot be address that is not funded and accepted airline`, async function () {
+    let flightName = 'AL456';
+    let registrationReverted = false;
+    try 
+    {
+        await config.flightSuretyApp.registerFlight(flightName, {from: config.testAddresses[5]})
+    }
+    catch(e) {
+        registrationReverted = true;
+    }
 
-  it(`6) Fifth airline cannot vote without funding`, async function () 
-   {       
+    assert.equal(registrationReverted, true,"Flight registration was not reverted");
+
+        
+});
+
+  it(`7a) Buy Insurance: Passenger can buy insurance`, async function () 
+   {            
+        let flightName = 'AL123';
+        let dataContractValueBegin = await web3.eth.getBalance(config.flightSuretyData.address);
+        let expectedPayOutAmount = web3.utils.toWei('15','Wei');
+
+        // console.log(dataContractValueBegin);
+        await config.flightSuretyApp.buyInsuranceApp(flightName, {from: config.testAddresses[5], value: 10, gasPrice: 0})
+
+        let dataContractValueEnd = await web3.eth.getBalance(config.flightSuretyData.address);
+        // console.log(dataContractValueEnd);
+    
+            
+        let payOutAmount = await config.flightSuretyData.getPayOutAmount(config.testAddresses[5], flightName);
+        assert.equal(payOutAmount.toString(), expectedPayOutAmount, "PayOutAmount not correct");
+        assert.equal(dataContractValueEnd - dataContractValueBegin, 10, "Not the right amount received in contract.");
+
+
     });
+    it(`7b) Buy Insurance: Passenger cannot over-insure the same flight`, async function () 
+    {            
+         let flightName = 'AL123';
+         let expectedPayOutAmount = web3.utils.toWei('15','Wei');
+         let dataContractValueBegin = await web3.eth.getBalance(config.flightSuretyData.address);
+        //  console.log(dataContractValueBegin);
+         let overInsuranceDenied = false;
+         try 
+         {
+            await config.flightSuretyApp.buyInsuranceApp(flightName, {from: config.testAddresses[5], value: 30, gasPrice: 0}) 
+         }
+         catch(e) {
+            overInsuranceDenied = true;
+         }
+    
+         let dataContractValueEnd = await web3.eth.getBalance(config.flightSuretyData.address);
+        //  console.log(dataContractValueEnd);
+     
+             
+         let payOutAmount = await config.flightSuretyData.getPayOutAmount(config.testAddresses[5], flightName);
+         assert.equal(overInsuranceDenied, true, "Overinsurance was not detected / reverted")
+         assert.equal(payOutAmount.toString(), expectedPayOutAmount, "PayOutAmount was increased despite overinsurance");
+         assert.equal(dataContractValueEnd - dataContractValueBegin, 0, "Passenger paid into insurance despite overnsurance");
+     });
+     it(`7c) Buy Insurance: Passenger can insure second flight without triggering over-insure of first flight insurance`, async function () 
+     {            
+          let flightName = 'AL456';
+          let expectedPayOutAmount = web3.utils.toWei('15','Wei');
+          let dataContractValueBegin = await web3.eth.getBalance(config.flightSuretyData.address);
+        //   console.log(dataContractValueBegin);
+          let overInsuranceDenied = false;
+          
+          //Register flight
+          await config.flightSuretyApp.registerFlight(flightName, {from: config.testAddresses[1]});
+
+          try 
+          {
+             await config.flightSuretyApp.buyInsuranceApp(flightName, {from: config.testAddresses[5], value: 10, gasPrice: 0}) 
+          }
+          catch(e) {
+             overInsuranceDenied = true;
+          }
+     
+          let dataContractValueEnd = await web3.eth.getBalance(config.flightSuretyData.address);
+        //   console.log(dataContractValueEnd);
+          let payOutAmount = await config.flightSuretyData.getPayOutAmount(config.testAddresses[5], flightName);
+          
+          assert.equal(overInsuranceDenied, false, "Overinsurance was detected / reverted despite different flight was chosen")
+          assert.equal(payOutAmount.toString(), expectedPayOutAmount, "PayOutAmount not set correctly for second flight insurance");
+          assert.equal(dataContractValueEnd - dataContractValueBegin, 10, "Not the right amount received in contract.");
+      });
+      it(`7d) Buy Insurance: Passenger cannot insure flight that is not registered`, async function () 
+      {            
+           let flightName = 'AL789';
+           let expectedPayOutAmount = web3.utils.toWei('0','Wei');
+           let dataContractValueBegin = await web3.eth.getBalance(config.flightSuretyData.address);
+        //    console.log(dataContractValueBegin);
+           let insuranceDenied = false;
+           
+           //Register flight
+           //await config.flightSuretyApp.registerFlight(flightName, {from: config.testAddresses[1]});
+ 
+           try 
+           {
+              await config.flightSuretyApp.buyInsuranceApp(flightName, {from: config.testAddresses[5], value: 10, gasPrice: 0}) 
+           }
+           catch(e) {
+              insuranceDenied = true;
+           }
+      
+           let dataContractValueEnd = await web3.eth.getBalance(config.flightSuretyData.address);
+        //    console.log(dataContractValueEnd);
+           let payOutAmount = await config.flightSuretyData.getPayOutAmount(config.testAddresses[5], flightName);
+           
+           assert.equal(insuranceDenied, true, "insurance attempt was not reverted despite flight not being registered chosen")
+           assert.equal(payOutAmount.toString(), expectedPayOutAmount, "PayOutAmount registered despite unregistered flight");
+           assert.equal(dataContractValueEnd - dataContractValueBegin, 0, "Ether transferred to contract despite unregistered flight");
+       });
+ 
+ 
+ 
 
   it(`7) Fifth airline can be funded and then can vote`, async function () 
   {       
