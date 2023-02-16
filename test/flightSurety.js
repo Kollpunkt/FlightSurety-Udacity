@@ -311,6 +311,68 @@ contract('Flight Surety Tests', async (accounts) => {
            assert.equal(dataContractValueEnd - dataContractValueBegin, 0, "Ether transferred to contract despite unregistered flight");
        });
  
+    it('8a) Oracle/ Pay Out: Oracle can be registered', async () => {
+    let registrationFee = await config.flightSuretyApp.REGISTRATION_FEE.call();
+    
+    //Take the last 20 addresses of the testaddresses array as addresses for Oracle. Ideally Ganache is set up with 25 to 30 addresses
+    for(let i=(config.testAddresses.length-20); i<config.testAddresses.length; i++) {      
+        await config.flightSuretyApp.registerOracle({ from: config.testAddresses[i], value: registrationFee });
+        let result = await config.flightSuretyApp.getMyIndexes.call({ from: config.testAddresses[i] });
+        //console.log('Oracle registered at '+config.testAddresses[i]+' with idexes: '+result[0],result[1],result[2]);
+        console.log(`Oracle Registered: ${result[0]}, ${result[1]}, ${result[2]} `+config.testAddresses[i]);
+        assert.notEqual(result,[],"Could not register Oracles.")
+    }
+    });
+    it('8b) Oracle/Pay Out: Oracles can request flight status', async () => {
+        // See insurance from Test case 6a and 7a
+        let flightName = 'AL123';
+        let airline = config.testAddresses[1];
+        let timestamp = Math.floor(Date.now() / 1000);
+        let insuredPassenger = config.testAddresses[5];
+        // var eventEmitted = false;
+        
+        // Watch the emitted event
+        // var event = config.flightSuretyApp.OracleRequest;
+        // await event.watch((err, res) => {
+        //     eventEmitted = true;
+        //     console.log(event);
+        // })
+
+    
+        // Submit a request for oracles to get status information for a flight
+        await config.flightSuretyApp.fetchFlightStatus(airline,flightName, timestamp);
+        
+        // ACT
+        // Since the Index assigned to each test account is opaque by design
+        // loop through all the accounts and for each account, all its Indexes (indices?)
+        // and submit a response. The contract will reject a submission if it was
+        // not requested so while sub-optimal, it's a good test of that feature
+        let statusCode = config.flightSuretyApp.STATUS_CODE_ON_TIME;
+        for(let i=(config.testAddresses.length-20); i<config.testAddresses.length; i++) {
+    
+          // Get oracle information
+          let oracleIndexes = await config.flightSuretyApp.getMyIndexes.call({ from: accounts[i]});
+    
+          for(let idx=0; idx<3; idx++) {
+            try {
+              // Submit a response...it will only be accepted if there is an Index match
+              await config.flightSuretyApp.submitOracleResponse(oracleIndexes[idx], flightName, timestamp, statusCode, { from: accounts[i] });
+              console.log('\nSuccess', idx, oracleIndexes[idx].toNumber(), flightName, timestamp);
+            } catch(e) {
+              // Enable this when debugging
+              console.log('\nError', idx, oracleIndexes[idx].toNumber(), flightName, timestamp);
+              console.log(e);
+            }
+          }
+        }
+        let result = await config.flightSuretyApp.getFlightInfo(flightName, { from: insuredPassenger });
+        console.log(result)
+        let balance = await config.flightSuretyData.getBalance(insuredPassenger, { from: insuredPassenger} );
+        assert.equal(result[1].toString(), statusCode);
+        assert.equal(balance.toString(), "0");
+    });
+    
+    
  
  
 

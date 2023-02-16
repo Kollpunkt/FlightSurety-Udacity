@@ -20,26 +20,31 @@ contract FlightSuretyData {
 
     uint256 airlineCount;
     
-    struct insuranceStructType {
-        // address passengerAddress;
-        //uint256 paidIn;
-        uint256 payOutAmount;
-    }
+    // struct insuranceStructType {            //Only index flight - insurees to loop through
+    //     // address passengerAddress;
+    //     //uint256 paidIn;
+    //     address insuree;
+    //     uint256 payOutAmount
+    //     bool alreadCredited;
+    // }
+
+    mapping(bytes32 => address[]) private insureesPerFlight;       //bytes32 maps/refers to id of flight, address[] array of passengers that have insurance for that flight  
+    //mapping(bytes32 => address) private insurances;       //bytes32 maps/refers to id of flight
 
     // mapping(bytes32 => passengerStrucType) private insurances;     //byes32 maps/refers to id of flight
 
     struct passengerStructType{
-        mapping (bytes32 => insuranceStructType) insurances;
+        mapping (bytes32 => uint256) payOutAmount;          //byes32 maps/refers to id of flightID
         uint256 credit;
     }
-    mapping(address => passengerStructType) private passengers;
+    mapping(address => passengerStructType) private passengers;                 
 
     struct flightStructType {
         uint8 statusCode;
         uint256 timeStamp;     
     }
 
-    mapping (bytes32 => flightStructType) private flights;     //byes32 maps/refers to id of flight
+    mapping (bytes32 => flightStructType) private flights;     //byes32 maps/refers to id of flightID
     
     address private contractOwner;                                      // Account used to deploy contract
     
@@ -166,8 +171,9 @@ contract FlightSuretyData {
 
     function getPayOutAmount(address passengerAddress, string memory flightName) public view returns(uint256)
     {
-        bytes32 flightID = getFlightKey(flightName);
-        return(passengers[passengerAddress].insurances[flightID].payOutAmount);
+        bytes32 flightID = getFlightID(flightName);
+        uint256 _payOutAmount = passengers[passengerAddress].payOutAmount[flightID];
+        return(_payOutAmount);
     }
 
     /********************************************************************************************/
@@ -243,8 +249,12 @@ contract FlightSuretyData {
     }
 
     }
-    function getFlightKey(string memory _flightName) pure internal returns(bytes32) {
+    function getFlightID(string memory _flightName) pure internal returns(bytes32) {
         return keccak256(abi.encodePacked(_flightName));
+    }
+
+    function getBalance(address _passenger) external view returns (uint256) {
+        return(passengers[_passenger].credit);
     }
     /********************************************************************************************/
     /*                                     SMART CONTRACT FUNCTIONS                             */
@@ -361,8 +371,9 @@ contract FlightSuretyData {
                             requireIsOperational
     {
         //passengers[passengerAddress].insurances[flightID].paidIn = msg.value;
-        uint256 beginPayOutAmount = passengers[passengerAddress].insurances[flightID].payOutAmount;
-        passengers[passengerAddress].insurances[flightID].payOutAmount = beginPayOutAmount.add(addPayOutAmount);        
+        uint256 beginPayOutAmount = passengers[passengerAddress].payOutAmount[flightID];
+        passengers[passengerAddress].payOutAmount[flightID] = beginPayOutAmount.add(addPayOutAmount);
+        insureesPerFlight[flightID].push(passengerAddress);  
     }
 
     /**
@@ -370,10 +381,30 @@ contract FlightSuretyData {
     */
     function creditInsurees
                                 (
+                                    bytes32 flightID
                                 )
                                 external
-                                pure
-    {
+                                requireCallerAuthorized
+                                requireIsOperational
+    {   // Debit before credit
+        address[] memory insurees = insureesPerFlight[flightID];
+        delete insureesPerFlight[flightID];
+        
+        
+        
+        //Loop through index of insurees per flight
+        for (uint256 i = 0; i < insurees.length; i++) {
+            address insuree = insurees[i];
+            //Debit before Credit
+            uint256 _payOutAmount = passengers[insuree].payOutAmount[flightID];
+            passengers[insuree].payOutAmount[flightID] = 0;
+
+            
+            //Credit PayOutAmount to Balance/credit
+            passengers[insuree].credit.add(_payOutAmount);       
+        }
+
+        
     }
     
 
@@ -413,18 +444,18 @@ contract FlightSuretyData {
 
     }
 
-    // function getFlightKey
-    //                     (
-    //                         address airline,
-    //                         string memory flight,
-    //                         uint256 timestamp
-    //                     )
-    //                     pure
-    //                     internal
-    //                     returns(bytes32) 
-    // {
-    //     return keccak256(abi.encodePacked(airline, flight, timestamp));
-    // }
+    function getFlightKey
+                        (
+                            address airline,
+                            string memory flight,
+                            uint256 timestamp
+                        )
+                        pure
+                        internal
+                        returns(bytes32) 
+    {
+        return keccak256(abi.encodePacked(airline, flight, timestamp));
+    }
 
     /**
     * @dev Fallback function for funding smart contract.

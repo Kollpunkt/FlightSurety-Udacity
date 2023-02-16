@@ -38,7 +38,7 @@ contract FlightSuretyApp {
     uint256 maxInsurancePayOut = payOutMultiple.mul(10).div(100); // Requirement that max 1 ether is insured per passenger per flight 
     
     struct flightStructType {
-       bytes32 flightID;
+    //    bytes32 flightID;
         string flightName;
         bool isRegistered;
         uint8 statusCode;
@@ -107,7 +107,7 @@ contract FlightSuretyApp {
     {
         return true;  // Modify to call data contract's status
     }
-    function getFlightKey(string memory _flightName) pure internal returns(bytes32) {
+    function getFlightID(string memory _flightName) pure internal returns(bytes32) {
         return keccak256(abi.encodePacked(_flightName));
     }
     /********************************************************************************************/
@@ -128,10 +128,10 @@ contract FlightSuretyApp {
                                 requireIsOperational
     {
         require(flightSuretyData.isVotingAirline(msg.sender),"Airline is not yet fully funded and voted in.");
-        bytes32 _flightID = getFlightKey(flightName);
+        bytes32 _flightID = getFlightID(flightName);
         require(!flights[_flightID].isRegistered,"Flight already registered");
 
-        flights[_flightID].flightID = _flightID;
+        // flights[_flightID].flightID = _flightID;
          
         flights[_flightID].isRegistered = true;
         flights[_flightID].flightName = flightName;
@@ -146,16 +146,16 @@ contract FlightSuretyApp {
                                 )
                                 external
                                 view
-                                returns (bool, uint8, uint256, address, bytes32)
+                                returns (bool, uint8, uint256, address)
     {
-        bytes32 _flightID = getFlightKey(flightName);
+        bytes32 _flightID = getFlightID(flightName);
         require(flights[_flightID].isRegistered,"Flight not yet registered");
         return(
             flights[_flightID].isRegistered,
             flights[_flightID].statusCode,
             flights[_flightID].updatedTimestamp,
-            flights[_flightID].airline,
-            flights[_flightID].flightID);
+            flights[_flightID].airline);
+            // flights[_flightID].flightID);
 
             
     
@@ -175,8 +175,12 @@ contract FlightSuretyApp {
                                     uint8 statusCode
                                 )
                                 internal
-                                pure
+                                requireIsOperational
     {
+        bytes32 flightID = getFlightID(flight);
+        if (statusCode == STATUS_CODE_LATE_AIRLINE) {
+            flightSuretyData.creditInsurees(flightID);
+        }
     }
 
 
@@ -261,7 +265,7 @@ contract FlightSuretyApp {
                             external
                             payable
     {
-        bytes32 _flightID = getFlightKey(flightName);
+        bytes32 _flightID = getFlightID(flightName);
         require(flights[_flightID].isRegistered,"Flight not yet registered");
         uint256 alreadyPaidIn = flightSuretyData.getPayOutAmount(msg.sender, flightName);
         uint256 addPayOut = msg.value.mul(payOutMultiple).div(100);
@@ -444,6 +448,15 @@ contract FlightSuretyApp {
 }   
 
 contract FlightSuretyData {
+    function getBalance     (
+                                address _passenger
+                            ) 
+                            external 
+                            view 
+                            returns (uint256) 
+    {
+    }
+
     function getPayOutAmount
                             (
                                 address passengerAddress, 
@@ -454,7 +467,13 @@ contract FlightSuretyData {
                             returns(uint256)
     {
     }
-    
+    function creditInsurees
+                                (
+                                    bytes32 flighID
+                                )
+                                external
+    {
+    }
     function buyInsurance
                             (         
                                 address passengerAddress,
@@ -519,18 +538,6 @@ contract FlightSuretyData {
     {
     }
 
-
-
-    /**
-     *  @dev Credits payouts to insurees
-    */
-    function creditInsurees
-                                (
-                                )
-                                external
-                                pure
-    {
-    }
     
 
     /**
