@@ -10,10 +10,30 @@ web3.eth.defaultAccount = web3.eth.accounts[0];
 let flightSuretyApp = new web3.eth.Contract(FlightSuretyApp.abi, config.appAddress);
 
 
+
+
 flightSuretyApp.events.OracleRequest({
     fromBlock: 0
   }, function (error, event) {
     if (error) console.log(error)
+    // let statusCode=20;
+    // oracles.forEach(async oracle => {
+    //   if (oracle.indexes.includes(index)) {
+    //     try {
+    //       await flightSuretyApp.methods.submitOracleResponse(
+    //         index,
+    //         flightNumber,
+    //         Math.floor(Date.now()/1000),
+    //         statusCode
+    //       ).send({ from: oracle.account, gas: 3000000 }); 
+    //     } catch (e) {
+    //       // console.log(e);
+    //     }
+
+    //     // console.log(`Oracle ${oracle.account} responded with status code ${statusCode}`);
+  // }
+    
+    
     console.log(event)
 });
 

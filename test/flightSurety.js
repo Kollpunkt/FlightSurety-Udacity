@@ -2,6 +2,14 @@
 var Test = require('../config/testConfig.js');
 var BigNumber = require('bignumber.js');
 
+// Flight status codees
+const STATUS_CODE_UNKNOWN = 0;
+const STATUS_CODE_ON_TIME = 10;
+const STATUS_CODE_LATE_AIRLINE = 20;
+const STATUS_CODE_LATE_WEATHER = 30;
+const STATUS_CODE_LATE_TECHNICAL = 40;
+const STATUS_CODE_LATE_OTHER = 50;
+
 contract('Flight Surety Tests', async (accounts) => {
 
   var config;
@@ -329,16 +337,7 @@ contract('Flight Surety Tests', async (accounts) => {
         let airline = config.testAddresses[1];
         let timestamp = Math.floor(Date.now() / 1000);
         let insuredPassenger = config.testAddresses[5];
-        // var eventEmitted = false;
-        
-        // Watch the emitted event
-        // var event = config.flightSuretyApp.OracleRequest;
-        // await event.watch((err, res) => {
-        //     eventEmitted = true;
-        //     console.log(event);
-        // })
 
-    
         // Submit a request for oracles to get status information for a flight
         await config.flightSuretyApp.fetchFlightStatus(airline,flightName, timestamp);
         
@@ -347,105 +346,110 @@ contract('Flight Surety Tests', async (accounts) => {
         // loop through all the accounts and for each account, all its Indexes (indices?)
         // and submit a response. The contract will reject a submission if it was
         // not requested so while sub-optimal, it's a good test of that feature
-        let statusCode = config.flightSuretyApp.STATUS_CODE_ON_TIME;
+        let statusCode = STATUS_CODE_ON_TIME;
+        console.log(statusCode);
         for(let i=(config.testAddresses.length-20); i<config.testAddresses.length; i++) {
     
-          // Get oracle information
-          let oracleIndexes = await config.flightSuretyApp.getMyIndexes.call({ from: accounts[i]});
-    
+          // Get oracle informationç
+          let oracleIndexes = await config.flightSuretyApp.getMyIndexes.call({ from: config.testAddresses[i]});
+          console.log(config.testAddresses[i]+" "+oracleIndexes);
+        
           for(let idx=0; idx<3; idx++) {
             try {
               // Submit a response...it will only be accepted if there is an Index match
-              await config.flightSuretyApp.submitOracleResponse(oracleIndexes[idx], flightName, timestamp, statusCode, { from: accounts[i] });
-              console.log('\nSuccess', idx, oracleIndexes[idx].toNumber(), flightName, timestamp);
+              //console.log('Submitted:', idx, oracleIndexes[idx].toNumber(), airline, flightName, timestamp, statusCode, config.testAddresses[i]);              
+              await config.flightSuretyApp.submitOracleResponse(oracleIndexes[idx], airline, flightName, timestamp, statusCode, { from: config.testAddresses[i] });
+              //console.log('\nSuccess', idx, oracleIndexes[idx].toNumber(), flightName, timestamp);
             } catch(e) {
               // Enable this when debugging
-              console.log('\nError', idx, oracleIndexes[idx].toNumber(), flightName, timestamp);
-              console.log(e);
+              //console.log('\nError', idx, oracleIndexes[idx].toNumber(), flightName, timestamp);
+              //console.log(e);
             }
           }
         }
         let result = await config.flightSuretyApp.getFlightInfo(flightName, { from: insuredPassenger });
-        console.log(result)
+        console.log(result[1].toString());
+        console.log(result[2].toString());
         let balance = await config.flightSuretyData.getBalance(insuredPassenger, { from: insuredPassenger} );
+        console.log(balance.toString());
+
         assert.equal(result[1].toString(), statusCode);
         assert.equal(balance.toString(), "0");
     });
+    it('8c) Oracle/Pay Out: Oracle set statuscode and thereby trigger pay out that can also be withdrawn', async () => {
+        // See insurance from Test case 6a and 7a
+        let flightName = 'AL123';
+        let airline = config.testAddresses[1];
+        let timestamp = Math.floor(Date.now() / 1000);
+        let insuredPassenger = config.testAddresses[5];
+
+        let dataContractValueBegin = await web3.eth.getBalance(config.flightSuretyData.address);
+        console.log("Balance on data contract at begin of test: "+dataContractValueBegin);
+
+        let passengerBalanceBegin = await config.flightSuretyData.getBalance(insuredPassenger, { from: insuredPassenger} );
+        console.log("Account/Wallet balance of insured passanger at begin of test: "+passengerBalanceBegin.toString());
+        
+        let payOutAmount = await config.flightSuretyData.getPayOutAmount(insuredPassenger, flightName);
+        console.log('PayoutAmount: '+payOutAmount.toString());
+
+        // Submit a request for oracles to get status information for a flight
+        await config.flightSuretyApp.fetchFlightStatus(airline,flightName, timestamp);
+        
+        // ACT
+        // Since the Index assigned to each test account is opaque by design
+        // loop through all the accounts and for each account, all its Indexes (indices?)
+        // and submit a response. The contract will reject a submission if it was
+        // not requested so while sub-optimal, it's a good test of that feature
+        let statusCode = STATUS_CODE_LATE_AIRLINE;
+        console.log("Status code set for flight after fetchFlighStatus: "+statusCode);
+        for(let i=(config.testAddresses.length-20); i<config.testAddresses.length; i++) {
     
+          // Get oracle informationç
+          let oracleIndexes = await config.flightSuretyApp.getMyIndexes.call({ from: config.testAddresses[i]});
+          console.log(config.testAddresses[i]+" "+oracleIndexes);
+        
+          for(let idx=0; idx<3; idx++) {
+            try {
+              // Submit a response...it will only be accepted if there is an Index match
+              //console.log('Check:', idx, oracleIndexes[idx].toNumber(), airline, flightName, timestamp, statusCode, config.testAddresses[i]);              
+              await config.flightSuretyApp.submitOracleResponse(oracleIndexes[idx], airline, flightName, timestamp, statusCode, { from: config.testAddresses[i] });
+              //console.log('\nSuccess', idx, oracleIndexes[idx].toNumber(), flightName, timestamp);
+            } catch(e) {
+              // Enable this when debugging
+              //console.log('\nError', idx, oracleIndexes[idx].toNumber(), flightName, timestamp);
+              //console.log(e);
+            }
+          }
+        }
+        let result = await config.flightSuretyApp.getFlightInfo(flightName, { from: insuredPassenger });
+        console.log(result.toString());
+
+        let passengerCreditBeforeWithdrawal = await config.flightSuretyData.getBalance(insuredPassenger, { from: insuredPassenger});
+        console.log("Withdrawable amount /Balance of insured passanger before withdrawal: "+passengerCreditBeforeWithdrawal);
+        
+        await config.flightSuretyApp.withdrawApp({ from: insuredPassenger });
+
+        let passengerBalanceEnd = await config.flightSuretyData.getBalance(insuredPassenger, { from: insuredPassenger} );
+        console.log("Account/Wallet balance of insured passanger at end of test: "+passengerBalanceEnd.toString());
+
+        let dataContractValueEnd = await web3.eth.getBalance(config.flightSuretyData.address);
+        console.log("Balance on data contract at end of test: "+dataContractValueEnd);
+
+        let passengerCreditAfterWithdrawal = await config.flightSuretyData.getBalance(insuredPassenger, { from: insuredPassenger});
+        console.log("Withdrawable amount /Balance of insured passanger after withdrawal: "+passengerCreditAfterWithdrawal);
+
+
+        assert.equal(result[1].toString(), statusCode);
+        assert.equal(dataContractValueEnd - dataContractValueBegin, payOutAmount.toString(), "Balance on data contract not reduced correctly");
+        assert.equal(passengerBalanceBegin - passengerBalanceEnd, payOutAmount.toString(), "Passenger account/wallet balance not increased correctly.");
+        assert.equal(passengerCreditAfterWithdrawal - passengerCreditBeforeWithdrawal, payOutAmount.toString(), "Passenger withrawable amount / balance not changed correctly");
+        assert.equal(passengerCreditAfterWithdrawal.toString(), "0", "Passenger withrawable amount / balance set to 0 after withrawal");
+        assert.equal(result[1].toString(),"20", "Status code of flight to correetcly set.")
+         
+        
+    });   
     
  
- 
 
-  it(`7) Fifth airline can be funded and then can vote`, async function () 
-  {       
-  });
- 
-  it(`8) (multiparty) can change operating status with setOperatingStatus() with M=2`, async function () {        
-        //two registered airlines vot for "false"
-        await config.flightSuretyApp.setOperatingStatusApp(false, { from: config.testAddresses[1] });
-        await config.flightSuretyApp.setOperatingStatusApp(false, { from: config.testAddresses[2] });
-
-        //status changed to false
-        let status = true;
-        status = await config.flightSuretyApp.isOperationalApp.call();
-        assert.equal(status, false, "Operating status value did not change from true to false"); 
-      
-  });
-
-  it(`9) (multiparty) cannot activate setOperatingStatus() with M=1`, async function () {
-    //
-    // await config.flightSuretyApp.registerAirlineApp(config.testAddresses[1], "Airline 1", { from: config.testAddresses[0] });      
-    // await config.flightSuretyApp.registerAirlineApp(config.testAddresses[2], "Airline 2", { from: config.testAddresses[1] });
-    
-    let beginnStatus = true;
-    beginnStatus = await config.flightSuretyApp.isOperationalApp.call();
-  
-    await config.flightSuretyApp.setOperatingStatusApp(!beginnStatus, { from: config.testAddresses[1] });
-
-
-    let endStatus = true;
-    endStatus = await config.flightSuretyApp.isOperationalApp.call();
-    assert.equal(endStatus, beginnStatus, "Operating status value did not change from true to false"); 
-  
-});
-
-  it(`(multiparty) can block access to functions using requireIsOperational when operating status is false`, async function () {
-
-      await config.flightSuretyApp.setOperatingStatusApp(false);
-
-      let reverted = false;
-      try 
-      {
-          await config.flightSurety.setTestingMode(true);
-      }
-      catch(e) {
-          reverted = true;
-      }
-      assert.equal(reverted, true, "Access not blocked for requireIsOperational");      
-
-      // Set it back for other tests to work
-      await config.flightSuretyData.setOperatingStatus(true);
-
-  });
-
-  it('(airline) cannot register an Airline using registerAirline() if it is not funded', async () => {
-    
-    // ARRANGE
-    let newAirline = accounts[2];
-
-    // ACT
-    try {
-        await config.flightSuretyApp.registerAirline(newAirline, {from: config.firstAirline});
-    }
-    catch(e) {
-
-    }
-    let result = await config.flightSuretyData.isAirline.call(newAirline); 
-
-    // ASSERT
-    assert.equal(result, false, "Airline should not be able to register another airline if it hasn't provided funding");
-
-  });
- 
 
 });

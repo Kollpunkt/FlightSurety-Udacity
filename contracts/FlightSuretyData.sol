@@ -65,6 +65,10 @@ contract FlightSuretyData {
     /********************************************************************************************/
     event AirlineVoteCasted(uint256 voteNumber, address airlineToVoteFor);
     event SuccessfulAirlineVoteCasted(uint256 voteNumber, uint256 voteHurdle, address airlineToVoteFor);
+    event CreditPaidOut(address _passenger, uint256 creditPaidOut);
+    event PayOutCredited(address _insuree, uint256 payOutAmount);
+    event FlightProcessed(string flight, uint8 statusCode);
+    event InsureesToFund(address[] insurees);
      
 
     /**
@@ -373,6 +377,9 @@ contract FlightSuretyData {
         //passengers[passengerAddress].insurances[flightID].paidIn = msg.value;
         uint256 beginPayOutAmount = passengers[passengerAddress].payOutAmount[flightID];
         passengers[passengerAddress].payOutAmount[flightID] = beginPayOutAmount.add(addPayOutAmount);
+        // if (insureesPerFlight[flightID].length=0) {
+        //     insureesPerFlight.push(flightID);
+        // }
         insureesPerFlight[flightID].push(passengerAddress);  
     }
 
@@ -388,9 +395,9 @@ contract FlightSuretyData {
                                 requireIsOperational
     {   // Debit before credit
         address[] memory insurees = insureesPerFlight[flightID];
-        delete insureesPerFlight[flightID];
+        // delete insureesPerFlight[flightID];
         
-        
+        emit InsureesToFund(insurees);
         
         //Loop through index of insurees per flight
         for (uint256 i = 0; i < insurees.length; i++) {
@@ -401,7 +408,8 @@ contract FlightSuretyData {
 
             
             //Credit PayOutAmount to Balance/credit
-            passengers[insuree].credit.add(_payOutAmount);       
+            passengers[insuree].credit = passengers[insuree].credit.add(_payOutAmount); 
+            emit PayOutCredited(insuree,_payOutAmount);      
         }
 
         
@@ -412,12 +420,23 @@ contract FlightSuretyData {
      *  @dev Transfers eligible payout funds to insuree
      *
     */
-    function pay
-                            (
+    function withdraw       (
+                                address payable _passenger
                             )
-                            external
-                            pure
+                            public
+                            requireIsOperational
+                            requireCallerAuthorized
     {
+        require(_passenger == tx.origin, "Withdraw request must originate from passenger itself.");
+        require(passengers[_passenger].credit > 0, "No pay out amounts allocated to passenger.");
+        //Debit before credit
+        uint256 credit = passengers[_passenger].credit;
+        passengers[_passenger].credit = 0;
+        
+        _passenger.transfer(credit);
+
+        emit CreditPaidOut(_passenger, credit);
+
     }
 
    /**

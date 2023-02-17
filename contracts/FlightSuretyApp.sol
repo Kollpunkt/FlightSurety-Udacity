@@ -47,6 +47,8 @@ contract FlightSuretyApp {
     }
     mapping(bytes32 => flightStructType) private flights;
 
+    event FlightProcessed(string _flight, uint8 statusCode);
+
  
     /********************************************************************************************/
     /*                                       FUNCTION MODIFIERS                                 */
@@ -178,9 +180,14 @@ contract FlightSuretyApp {
                                 requireIsOperational
     {
         bytes32 flightID = getFlightID(flight);
+        flights[flightID].statusCode = statusCode;
+        flights[flightID].updatedTimestamp = timestamp;
+         
         if (statusCode == STATUS_CODE_LATE_AIRLINE) {
+
             flightSuretyData.creditInsurees(flightID);
         }
+        emit FlightProcessed(flight, statusCode);
     }
 
 
@@ -272,8 +279,13 @@ contract FlightSuretyApp {
         require(alreadyPaidIn.add(addPayOut) <= maxInsurancePayOut, "Additional insurance leads to overinsurance");
         flightSuretyData.buyInsurance.value(msg.value)(msg.sender, _flightID, addPayOut);
     }
-
-
+function withdrawApp       (
+                            )
+                            public
+                            requireIsOperational
+{
+    flightSuretyData.withdraw(msg.sender);
+}
 // region ORACLE MANAGEMENT
 
     // Incremented to add pseudo-randomness at various points
@@ -448,6 +460,14 @@ contract FlightSuretyApp {
 }   
 
 contract FlightSuretyData {
+    function withdraw       (
+                                address _passenger
+                            )
+                            public
+    {
+
+    }
+
     function getBalance     (
                                 address _passenger
                             ) 
