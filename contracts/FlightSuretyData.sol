@@ -63,6 +63,7 @@ contract FlightSuretyData {
     /********************************************************************************************/
     /*                                       EVENT DEFINITIONS                                  */
     /********************************************************************************************/
+    event AirlineRegistered(address appUserAddress, address airlineAddress, string name, uint256 airlineCount);
     event AirlineVoteCasted(uint256 voteNumber, address airlineToVoteFor);
     event SuccessfulAirlineVoteCasted(uint256 voteNumber, uint256 voteHurdle, address airlineToVoteFor);
     event CreditPaidOut(address _passenger, uint256 creditPaidOut);
@@ -82,7 +83,7 @@ contract FlightSuretyData {
     {
         contractOwner = msg.sender;
         //Contract owner is automtically registered as 
-        airlines[msg.sender].name = "ContractOwnerAirline";
+        airlines[msg.sender].name = "Contract owner Airways";
         airlines[msg.sender].isFunded = true;
         airlines[msg.sender].isAccepted = true;
         airlines[msg.sender].ID=1;
@@ -298,6 +299,7 @@ contract FlightSuretyData {
             // Opening  vote for this airline
             airlineToVoteFor = airlineCount;
         }
+        emit AirlineRegistered(appUserAddress, airlineAddress, name, airlineCount);
     }
     /**
     * @dev Sets contract operations on/off
