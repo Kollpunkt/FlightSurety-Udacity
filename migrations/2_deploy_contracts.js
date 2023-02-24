@@ -4,7 +4,7 @@ const fs = require('fs');
 
 module.exports = function(deployer) {
 
-    let firstAirline = '0x265E2842AF1e6590B7d877B3c148268e04a7daA4';
+    let firstAirline = '0x7bEaaF4C2fEE180021e7A8C4A22616Bb938c8b1C';
     deployer.deploy(FlightSuretyData)
     .then(() => {
         return deployer.deploy(FlightSuretyApp, FlightSuretyData.address)
@@ -13,7 +13,18 @@ module.exports = function(deployer) {
                         localhost: {
                             url: 'http://localhost:7545',
                             dataAddress: FlightSuretyData.address,
-                            appAddress: FlightSuretyApp.address
+                            appAddress: FlightSuretyApp.address,
+                            ownerAddress: '0x51f9378B809cb9485dF83beEEECF20b23792F161',
+                            startingAirlines: [
+                                {name: "Owner Airline", address: '0x51f9378B809cb9485dF83beEEECF20b23792F161'}, //accounts[0]
+                                {name: "First Airline", address: '0xe2B1b777259a815bbee83030263402cd5cD15528'}, //accounts[1]
+                                {name: "Second Airline", address: '0x28DF7Ee41CbA72dF2E2972fBA63487ADF32412C0'}, //accounts[2]
+                                {name: "Third Airline", address: '0xc4F3F8EEb275Aa6558Eb5f0BD94059c82FE221f5'} //accounts[3]
+                            ],
+                            startingPassengers:['0x973d8841F108458107069A896E444abbb137A98C', '0x57cbc7D03B2A4c788a5FF3Aa3b202c825822fcb9'], //accounts[4] and //accounts[5]
+                            oracleAddresses:['0xA2CAd9a05fe8B6942d7aCE68D7a72176a0e6838A',
+                                            '0x6391ad5ff11aB19fABdB9BB530c287e4a0e0E66E',
+                                            '0xbcA025101952eAA6fa6831dE704c59DC4535a744']
                         }
                     }
                     fs.writeFileSync(__dirname + '/../src/dapp/config.json',JSON.stringify(config, null, '\t'), 'utf-8');

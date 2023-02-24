@@ -1,11 +1,12 @@
-pragma solidity >=0.4.25;
+pragma solidity ^0.8.17; //>=0.8.25;
 //pragma experimental ABIEncoderV2;
 
 // It's important to avoid vulnerabilities due to numeric overflow bugs
 // OpenZeppelin's SafeMath library, when used correctly, protects agains such bugs
 // More info: https://www.nccgroup.trust/us/about-us/newsroom-and-events/blog/2018/november/smart-contract-insecurity-bad-arithmetic/
 
-import "../node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
+// import "../node_modules/openzeppelin-solidity/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 /************************************************** */
 /* FlightSurety Smart Contract                      */
@@ -204,18 +205,20 @@ contract FlightSuretyApp {
 
         // Generate a unique key for storing the request
         bytes32 key = keccak256(abi.encodePacked(index, airline, flight, timestamp));
-        oracleResponses[key] = ResponseInfo({
-                                                requester: msg.sender,
-                                                isOpen: true
-                                            });
-
+        // oracleResponses[key] = ResponseInfo({
+        //                                         requester: msg.sender,
+        //                                         isOpen: true
+        //                                     });
+        ResponseInfo storage responseInfo = oracleResponses[key];
+        responseInfo.requester = msg.sender;
+        responseInfo.isOpen = true;
         emit OracleRequest(index, airline, flight, timestamp);
     } 
     function registerAirlineApp(
                                 address airlineAddress,
                                 string calldata name
                             )
-                            external
+                            public
     {
         flightSuretyData.registerAirline(msg.sender, airlineAddress, name);
     }
@@ -258,9 +261,10 @@ contract FlightSuretyApp {
         require(msg.value >= airlineFundingRequirement, "Not sufficient funds sent");
 
         uint256 overpaid = msg.value.sub(airlineFundingRequirement);
-        msg.sender.transfer(overpaid);
+        address payable _sender = payable(msg.sender);
+        _sender.transfer(overpaid);
 
-        flightSuretyData.fundAirline.value(airlineFundingRequirement)(airline);
+        flightSuretyData.fundAirline{value: airlineFundingRequirement}(airline);
 
     }
 
@@ -277,7 +281,7 @@ contract FlightSuretyApp {
         uint256 alreadyPaidIn = flightSuretyData.getPayOutAmount(msg.sender, flightName);
         uint256 addPayOut = msg.value.mul(payOutMultiple).div(100);
         require(alreadyPaidIn.add(addPayOut) <= maxInsurancePayOut, "Additional insurance leads to overinsurance");
-        flightSuretyData.buyInsurance.value(msg.value)(msg.sender, _flightID, addPayOut);
+        flightSuretyData.buyInsurance{value: msg.value}(msg.sender, _flightID, addPayOut);
     }
 function withdrawApp       (
                             )
@@ -550,7 +554,7 @@ contract FlightSuretyData {
                                 address airlineAddress,
                                 string calldata name
                             )
-                            external
+                            public
     {
     }
 

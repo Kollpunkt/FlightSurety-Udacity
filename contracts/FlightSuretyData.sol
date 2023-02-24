@@ -1,6 +1,8 @@
-pragma solidity >=0.4.25;
+pragma solidity ^0.8.17; //>=0.4.25;
 
-import "../node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
+//import "../node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract FlightSuretyData {
     using SafeMath for uint256;
@@ -90,7 +92,8 @@ contract FlightSuretyData {
 
         //Set airline count for airlines[].ID setting
         airlineCount = 1;
-         
+
+        authorizedContracts[msg.sender] = 1;
     }
 
     /********************************************************************************************/
@@ -122,7 +125,7 @@ contract FlightSuretyData {
 
     modifier requireCallerAuthorized()
     {
-        require(authorizedContracts[msg.sender] == 1, "Caller is not authrized contract");
+        require(authorizedContracts[msg.sender] == 1, string.concat("Caller is not authorized contract",Strings.toHexString(uint160(msg.sender))));
         _;
     }
     /**
@@ -184,20 +187,16 @@ contract FlightSuretyData {
     /********************************************************************************************/
     /*                                 REFERENCE DATA APP CONTRACT  FUNCTIONS                   */
     /********************************************************************************************/
-
-    /**
-    * @dev authorize contract
-    *
-    * @return A bool that is the current operating status
-    */      
+     
     function authorizeCaller(address appContract) 
-                                                    external 
-                                                    requireContractOwner {
+                                                    public 
+                                                    requireContractOwner 
+    {
         authorizedContracts[appContract] = 1;
     } 
 
     function deauthorizeCaller(address appContract) 
-                                                    external 
+                                                    public 
                                                     requireContractOwner {
         delete authorizedContracts[appContract];
     } 
@@ -276,7 +275,7 @@ contract FlightSuretyData {
                                 address airlineAddress,
                                 string calldata name
                             )
-                            external
+                            public
                             requireCallerAuthorized
 
     {   //First 3 airlines can be registered without vote, afterwards an airline can only be regietered if the voting for the previous airline is concluded
@@ -482,10 +481,11 @@ contract FlightSuretyData {
     * @dev Fallback function for funding smart contract.
     *
     */
-    function() 
-                            external 
-                            payable 
-    {
+    fallback() external payable {
+
+    }
+
+    receive() external payable {
 
     }
 

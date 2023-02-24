@@ -1,7 +1,35 @@
 {
 	"localhost": {
 		"url": "http://localhost:7545",
-		"dataAddress": "0x2f4fdA7F592e9B5D121a787d61227AceD508E1B0",
-		"appAddress": "0x2E2a2CFFB178B3DD966A6a8DC7777EE96C4d93f2"
+		"dataAddress": "0x4aAa9914fA43C795cFAD9f628f96a6509834D3A5",
+		"appAddress": "0x5b6e319D869e4523876fcCF25aBAEfd4820Fd8C0",
+		"ownerAddress": "0x51f9378B809cb9485dF83beEEECF20b23792F161",
+		"startingAirlines": [
+			{
+				"name": "Owner Airline",
+				"address": "0x51f9378B809cb9485dF83beEEECF20b23792F161"
+			},
+			{
+				"name": "First Airline",
+				"address": "0xe2B1b777259a815bbee83030263402cd5cD15528"
+			},
+			{
+				"name": "Second Airline",
+				"address": "0x28DF7Ee41CbA72dF2E2972fBA63487ADF32412C0"
+			},
+			{
+				"name": "Third Airline",
+				"address": "0xc4F3F8EEb275Aa6558Eb5f0BD94059c82FE221f5"
+			}
+		],
+		"startingPassengers": [
+			"0x973d8841F108458107069A896E444abbb137A98C",
+			"0x57cbc7D03B2A4c788a5FF3Aa3b202c825822fcb9"
+		],
+		"oracleAddresses": [
+			"0xA2CAd9a05fe8B6942d7aCE68D7a72176a0e6838A",
+			"0x6391ad5ff11aB19fABdB9BB530c287e4a0e0E66E",
+			"0xbcA025101952eAA6fa6831dE704c59DC4535a744"
+		]
 	}
 }
