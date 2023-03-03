@@ -50,7 +50,7 @@ contract FlightSuretyData {
     
     address private contractOwner;                                      // Account used to deploy contract
     
-    mapping (address => uint256) authorizedContracts;                   // App contracts that are allowed by owner to call this data contract
+    mapping (address => bool) authorizedContracts;                   // App contracts that are allowed by owner to call this data contract
 
     bool private operational = true;                                    // Blocks all state changes throughout the contract if false
 
@@ -78,11 +78,7 @@ contract FlightSuretyData {
     * @dev Constructor
     *      The deploying account becomes contractOwner
     */
-    constructor
-                                (
-                                ) 
-                                public 
-    {
+    constructor() {
         contractOwner = msg.sender;
         //Contract owner is automtically registered as 
         airlines[msg.sender].name = "Contract owner Airways";
@@ -93,7 +89,7 @@ contract FlightSuretyData {
         //Set airline count for airlines[].ID setting
         airlineCount = 1;
 
-        authorizedContracts[msg.sender] = 1;
+        authorizedContracts[msg.sender] = true;
     }
 
     /********************************************************************************************/
@@ -125,7 +121,7 @@ contract FlightSuretyData {
 
     modifier requireCallerAuthorized()
     {
-        require(authorizedContracts[msg.sender] == 1, string.concat("Caller is not authorized contract",Strings.toHexString(uint160(msg.sender))));
+        require(authorizedContracts[msg.sender], string.concat(Strings.toHexString(uint160(msg.sender)), " is not authorized contract"));
         _;
     }
     /**
@@ -192,7 +188,8 @@ contract FlightSuretyData {
                                                     public 
                                                     requireContractOwner 
     {
-        authorizedContracts[appContract] = 1;
+        require(authorizedContracts[appContract] != true, "Caller is already authorized");
+        authorizedContracts[appContract] = true;
     } 
 
     function deauthorizeCaller(address appContract) 
@@ -279,6 +276,7 @@ contract FlightSuretyData {
                             requireCallerAuthorized
 
     {   //First 3 airlines can be registered without vote, afterwards an airline can only be regietered if the voting for the previous airline is concluded
+        require(airlines[airlineAddress].ID==0, "Airline is already registered.");
         require((airlineToVoteFor==0) ||
                 (airlineCount<=3)        , "There is currently an unfinished registration process going on. Please finish that first");
         
@@ -422,7 +420,7 @@ contract FlightSuretyData {
      *
     */
     function withdraw       (
-                                address payable _passenger
+                                address _passenger
                             )
                             public
                             requireIsOperational
@@ -434,7 +432,7 @@ contract FlightSuretyData {
         uint256 credit = passengers[_passenger].credit;
         passengers[_passenger].credit = 0;
         
-        _passenger.transfer(credit);
+        payable(_passenger).transfer(credit);
 
         emit CreditPaidOut(_passenger, credit);
 

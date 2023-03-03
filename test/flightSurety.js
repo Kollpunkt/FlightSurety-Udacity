@@ -27,7 +27,7 @@ contract('Flight Surety Tests', async (accounts) => {
     let accessDenied = false;
     try 
     {
-        let status = await config.flightSuretyData.isOperational.call();
+        let status = await config.flightSuretyData.isOperational.call({from: config.testAddresses[1]}); //Different account to owner bc is set as authorized caller in coonstrcutor
     }
     catch(e) {
         accessDenied = true;

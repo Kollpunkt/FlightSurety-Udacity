@@ -11,6 +11,8 @@ export default class Contract {
     async initialize(network) {
         let config = Config[network];
         this.owner = config.ownerAddress;
+        this.appAddress = config.appAddress; // handover required as I will call authorizeCaller directly from index.js
+        this.oracleAddresses = config.oracleAddresses;
         await this.initializeWeb3(config);
         await this.initializeContracts(config);
 
@@ -19,15 +21,26 @@ export default class Contract {
 
         this.airlines = config.startingAirlines;
         this.passengers = config.startingPassengers;
+        this.flights = config.startingFlights;
 
         console.log('here?')
         //Authorise app contract to call data contract
-        await this.authorizeCaller(config.appAddress);
-        await this.initilizeAirlines();
-        //Register  - but not fund - the 2nd, 3rd and 4th airline - owner is already the first airline
+        //await this.authorizeCaller(config.appAddress);
 
-        
-        
+        //Register  - but not fund - the 2nd, 3rd and 4th airline - owner is already the first airline
+        //await this.initilizeAirlines();
+
+        await this.updateContractInfo();
+
+        var selectAirlines = document.getElementById("airlines-airline-dropdown");
+        for(let counter=0; counter<=3; counter++) {
+            selectAirlines.options[selectAirlines.options.length] = new Option(this.airlines[counter].name+"("+this.airlines[counter].address.slice(0,8)+"...)", counter);
+        }
+
+        var selectFlights = document.getElementById("flights-flights-dropdown");
+        for(let counter=0; counter<=2; counter++) {
+            selectFlights.options[selectFlights.options.length] = new Option(this.flights[counter].name+"("+this.flights[counter].from+" --> "+this.flights[counter].to+")", counter);
+        }
     }
 
     async initializeWeb3(config) {
@@ -57,11 +70,26 @@ export default class Contract {
     async initilizeAirlines() {
         let self = this;
         for (let counter=1; counter<=3; counter++) { //I do count the owner as airline, so only for other airlines are able to register without voting
-        console.log('Starting to register: '+self.airlines[counter].address+ ' by ' + self.owner);
+        //console.log('Starting to register: '+self.airlines[counter].address+ ' by ' + self.owner);
         await self.registerAirline(self.airlines[counter].address, self.airlines[counter].name, { from: self.owner}); 
         console.log('registered: '+self.airlines[counter].address);
+        }
     }
 
+    async registerMultipleOracles(registrationFee) {
+        let self = this;
+        var success = true;
+        console.log(registrationFee, self.oracleAddresses);
+        let regFeeWei = this.web3.utils.toWei(registrationFee, 'ether');
+        try {
+            self.flightSuretyApp.methods
+            .registerMultipleOracles(self.oracleAddresses)
+            .send({ value: regFeeWei, from: self.owner });
+        } catch(error){
+                    console.log(error);
+                    success = false;
+        };
+        if (success) {console.log('Oracles authorized: '+self.oracleAddresses+' by '+self.owner);};
     }
 
     async getDataContractAddress() {
@@ -72,24 +100,65 @@ export default class Contract {
         return this.flightSuretyApp._address;
     }
 
-    async authorizeCaller(address){
+    async authorizeCaller(){
         let self = this;
-        let success = true;
+        var success = true;
         try {
             self.flightSuretyData.methods
-            .authorizeCaller(address)
-            .call({ from: self.owner });
+            .authorizeCaller(self.appAddress)
+            .send({ from: self.owner });
         } catch(error){
                     console.log(error);
                     success = false;
         };
-        if (success) {console.log('App contract authorized to call data contract: '+address+' by '+self.owner);};
+        if (success) {console.log('App contract authorized to call data contract: '+self.appAddress+' by '+self.owner);};
     }
 
+    async updateContractInfo() {
+        let self=this;
+        var statusDataContract=false; 
+        try {
+            statusDataContract = await self.flightSuretyData.methods.isOperational().call({ from: self.owner });
+            console.log(statusDataContract);
+        } catch(error){
+            console.error(error);
+        };
+        if (statusDataContract) {
+            document.getElementById('contract-operational-status').value="Operational";
+        } else {
+            document.getElementById('contract-operational-status').value="WARNING: Not operational";
+        }
+
+
+    }
+    async getAirlineInfo(index) {
+        let self = this;
+        console.log(index, self.airlines[index].address, self.airlines[index].name)
+        return [self.airlines[index].address, self.airlines[index].name];
+    }
+    async getFlightInfo(index) {
+        let self = this;
+        console.log(index, self.flights[index].name)
+        return [self.flights[index].name];
+    }
+
+    
     async registerAirline(address, name) {
         let self = this;
         try {
-        await self.flightSuretyApp.methods.registerAirlineApp(address,name);
+        await self.flightSuretyApp.methods.registerAirlineApp(address,name).send({ from: self.owner });
+        } catch(error){
+            console.error(error);
+        };
+    }
+
+    async fundAirline(address, amountEther) {
+        let self = this;
+        let account = await this.getAccount();
+        let amountWei = this.web3.utils.toWei(amountEther, 'ether');
+        //console.log(account+amountWei);
+        try {
+        await self.flightSuretyApp.methods.fundAirlineApp(address).send({ from: account, value: amountWei });
         } catch(error){
             console.error(error);
         };
@@ -109,14 +178,14 @@ export default class Contract {
             });
     }
 
-    // async getCurrentAccount() {
-    //     try {
-    //         let accounts = await this.web3.eth.getAccounts();
-    //         return accounts[0];
-    //     } catch (error) {
-    //         console.log(error);
-    //     }
-    // }
+    async getAccount() {
+        try {
+            let accounts = await this.web3.eth.getAccounts();
+            return accounts[0];
+        } catch (error) {
+            console.log(error);
+        }
+    }
 
     // async isDataContractOperational() {
     //    let account = await this.getCurrentAccount();

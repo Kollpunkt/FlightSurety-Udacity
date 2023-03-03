@@ -1,4 +1,5 @@
 pragma solidity ^0.8.17; //>=0.8.25;
+
 //pragma experimental ABIEncoderV2;
 
 // It's important to avoid vulnerabilities due to numeric overflow bugs
@@ -7,6 +8,7 @@ pragma solidity ^0.8.17; //>=0.8.25;
 
 // import "../node_modules/openzeppelin-solidity/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "../contracts/FlightSuretyData.sol";
 
 /************************************************** */
 /* FlightSurety Smart Contract                      */
@@ -29,7 +31,7 @@ contract FlightSuretyApp {
     address private contractOwner;          // Account used to deploy contract
 
     //Reference to the data contract
-    FlightSuretyData flightSuretyData;
+    FlightSuretyData private flightSuretyData;
 
     //Funding requirement set in app contract and handed over into data contract
     //Risk assessment: because airline needs to be voted in (set in data contract) risk of being manipulated on way to data contract with low relevance
@@ -49,6 +51,7 @@ contract FlightSuretyApp {
     mapping(bytes32 => flightStructType) private flights;
 
     event FlightProcessed(string _flight, uint8 statusCode);
+    event OracleRegistered(address oracleAddress);
 
  
     /********************************************************************************************/
@@ -89,14 +92,10 @@ contract FlightSuretyApp {
     * @dev Contract constructor
     *
     */
-    constructor
-                                (
-                                    address dataContract
-                                ) 
-                                public 
+    constructor(address dataContract) 
     {
         contractOwner = msg.sender;
-        flightSuretyData = FlightSuretyData(dataContract);
+        flightSuretyData = FlightSuretyData(payable(dataContract));
     }
 
     /********************************************************************************************/
@@ -172,7 +171,6 @@ contract FlightSuretyApp {
     */  
     function processFlightStatus
                                 (
-                                    address airline,
                                     string memory flight,
                                     uint256 timestamp,
                                     uint8 statusCode
@@ -260,9 +258,9 @@ contract FlightSuretyApp {
         // Airline must be registered first
         require(msg.value >= airlineFundingRequirement, "Not sufficient funds sent");
 
-        uint256 overpaid = msg.value.sub(airlineFundingRequirement);
-        address payable _sender = payable(msg.sender);
-        _sender.transfer(overpaid);
+        //uint256 overpaid = msg.value.sub(airlineFundingRequirement);
+        //address payable _sender = payable(msg.sender);
+        //_sender.transfer(overpaid);
 
         flightSuretyData.fundAirline{value: airlineFundingRequirement}(airline);
 
@@ -350,8 +348,27 @@ function withdrawApp       (
                                         isRegistered: true,
                                         indexes: indexes
                                     });
+        emit OracleRegistered(msg.sender);
     }
+    function registerMultipleOracles
+                                    (
+                                        address[] memory oracleAddresses
+                                    )
+                                    external
+                                    payable
+    {
+        uint256 valuePerOracle = msg.value.div(oracleAddresses.length);
+        require(valuePerOracle>= REGISTRATION_FEE, "Registration fee is not sufficient");
+        for (uint i=0; i<oracleAddresses.length; i++) {
+            uint8[3] memory indexes = generateIndexes(oracleAddresses[i]);
 
+            oracles[oracleAddresses[i]] = Oracle({
+                                        isRegistered: true,
+                                        indexes: indexes
+                                    });
+            emit OracleRegistered(oracleAddresses[i]);
+        } 
+    }
     function getMyIndexes
                             (
                             )
@@ -397,7 +414,7 @@ function withdrawApp       (
             emit FlightStatusInfo(airline, flight, timestamp, statusCode);
 
             // Handle flight status as appropriate
-            processFlightStatus(airline, flight, timestamp, statusCode);
+            processFlightStatus(flight, timestamp, statusCode);
         }
     }
 
@@ -463,117 +480,117 @@ function withdrawApp       (
 
 }   
 
-contract FlightSuretyData {
-    function withdraw       (
-                                address _passenger
-                            )
-                            public
-    {
+// abstract contract _FlightSuretyData {
+//     function withdraw       (
+//                                 address _passenger
+//                             )
+//                             public
+//     {
 
-    }
+//     }
 
-    function getBalance     (
-                                address _passenger
-                            ) 
-                            external 
-                            view 
-                            returns (uint256) 
-    {
-    }
+//     function getBalance     (
+//                                 address _passenger
+//                             ) 
+//                             external 
+//                             view 
+//                             returns (uint256) 
+//     {
+//     }
 
-    function getPayOutAmount
-                            (
-                                address passengerAddress, 
-                                string memory flightName
-                            ) 
-                            public 
-                            view 
-                            returns(uint256)
-    {
-    }
-    function creditInsurees
-                                (
-                                    bytes32 flighID
-                                )
-                                external
-    {
-    }
-    function buyInsurance
-                            (         
-                                address passengerAddress,
-                                bytes32 flightID,
-                                uint256 addPayOutAmount
+//     function getPayOutAmount
+//                             (
+//                                 address passengerAddress, 
+//                                 string memory flightName
+//                             ) 
+//                             public 
+//                             view 
+//                             returns(uint256)
+//     {
+//     }
+//     function creditInsurees
+//                                 (
+//                                     bytes32 flighID
+//                                 )
+//                                 external
+//     {
+//     }
+//     function buyInsurance
+//                             (         
+//                                 address passengerAddress,
+//                                 bytes32 flightID,
+//                                 uint256 addPayOutAmount
 
-                            )
-                            external
-                            payable
-    {
-    }
+//                             )
+//                             external
+//                             payable
+//     {
+//     }
     
-    function fundAirline
-                            (
-                                address airline
-                            )
-                            public
-                            payable
-    {
-    }
+//     function fundAirline
+//                             (
+//                                 address airline
+//                             )
+//                             public
+//                             payable
+//     {
+//     }
  
     
-    function voteAirlineIn
-                            (
-                                address airlineCastedVoteFor,
-                                address appUserAddress
-                            ) 
-                            external  
-    {
+//     function voteAirlineIn
+//                             (
+//                                 address airlineCastedVoteFor,
+//                                 address appUserAddress
+//                             ) 
+//                             external  
+//     {
 
-    }
-    function isOperational() 
-                            public 
-                            view 
-                            returns(bool) 
+//     }
+//     function isOperational() 
+//                             public 
+//                             view 
+//                             returns(bool) 
                             
-    {
-    }
+//     {
+//     }
     
-    function setOperatingStatus
-                        (
-                            bool mode,
-                            address appUserAddress
-                        ) 
-                        external   
-    {
+//     function setOperatingStatus
+//                         (
+//                             bool mode,
+//                             address appUserAddress
+//                         ) 
+//                         external   
+//     {
         
-    }   
+//     }   
     
     
-    function registerAirline
-                            (
-                                address appUserAddress,
-                                address airlineAddress,
-                                string calldata name
-                            )
-                            public
-    {
-    }
+//     function registerAirline
+//                             (
+//                                 address appUserAddress,
+//                                 address airlineAddress,
+//                                 string calldata name
+//                             )
+//                             public
+//     {
+//     }
 
-    function isVotingAirline(address _address) public view returns(bool)
-    {
-    }
+//     function isVotingAirline(address _address) public view returns(bool)
+//     {
+//     }
 
     
 
-    /**
-     *  @dev Transfers eligible payout funds to insuree
-     *
-    */
-    function pay
-                            (
-                            )
-                            external
-                            pure
-    {
-    }
+//     /**
+//      *  @dev Transfers eligible payout funds to insuree
+//      *
+//     */
+//     function pay
+//                             (
+//                             )
+//                             external
+//                             pure
+//     {
+//     }
 
-}
+// }

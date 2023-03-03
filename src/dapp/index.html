@@ -12,31 +12,39 @@
 <body>
 
     <main class="container">
-        <div id="display-operational-status" class="top-20"></div>
-        <div id="display-contract-balance" class="top-20"></div>
-        <div id="display-wrapper" class="top-20"></div>
-            <h2>Airline Section</h2>
+        <h2>Contract Section</h2>
+        <div class="top-20">
+            <label class="form">Data contract status: </label> <input type="text" id="contract-operational-status" readonly>
+            <btn class="btn btn-primary" id="contract-register-app-contract">Authorize App Contract</btn>&nbsp
         </div>
-        <div class="row top-20"><h4>Fund Airline</h4></div>
-        <div id="display-wrapper-funding-status" class="top-20"></div>
-        <div id="display-airline" class="top-20">
-            <div class="top-20">
-                <label class="form">Airline</label><select id="airline1"></select>&nbsp;&nbsp;
-                <div id="airlineInfo2"></div>
-            </div>
-            <div class="row top-20">
-                <label class="form">Amount (ETH)</label><input type="text" id="fundAmount" maxlength="2" size="4" value="10"/>&nbsp;&nbsp;
+        <div class="top-20">   
+            <label class="form">Registration fee (ETH)</label><input type="text" id="contract-registration-fee" maxlength="6" size="4" value="0.01"/>
+            <btn class="btn btn-primary" id="contract-register-oracles">Register starting oracles</btn> 
+        </div>
+        
+        <div class="top-20"><br><br> </div><h2>Airlines Section</h2>
+
+        <div class="top-20"><h4>Register Airline</h4></div>
+        <div class="top-20">
+            <label class="form">Airline</label><select id="airlines-airline-dropdown"></select>&nbsp;&nbsp;
+            <btn class="btn btn-primary" id="airlines-register-airlines">Register starting airlines</btn>
+        </div>
+        <div class="top-20"><h4>Fund Airline</h4></div>
+        <div class="top-20">
+                <label class="form">Amount (ETH)</label><input type="text" id="airlines-fund-amount" maxlength="2" size="4" value="10"/>&nbsp;&nbsp;
                 <btn class="btn btn-primary" id="fund">Fund Airline</btn>
-            </div>
         </div>
-        <div id="display-wrapper" class="top-20"><br><br></div>
-        <div id="display-wrapper-flight-status" class="top-20">
-            <h2>Flight Status</h2>
+        </div>
+
+        
+        <div id="display-wrapper" class="top-20"><br><br>
+        <h2>Flights Section</h2></div>
+            <h4>Flight Status</h4>
         </div>
         <div class="top-20">
             <label class="form">Flight</label> 
-            <select id="flights1"></select>&nbsp;&nbsp;
-            <btn class="btn btn-primary" id="submit-oracle">Submit to Oracles</btn>
+            <select id="flights-flights-dropdown"></select>&nbsp;&nbsp;
+            <btn class="btn btn-primary" id="flights-request-oracles">Request Flight Status</btn>
         </div>
         <div id="display-wrapper" class="top-20"><br><br></div>
         <div id="display-wrapper" class="top-20">

@@ -1,8 +1,8 @@
 {
 	"localhost": {
 		"url": "http://localhost:7545",
-		"dataAddress": "0x4aAa9914fA43C795cFAD9f628f96a6509834D3A5",
-		"appAddress": "0x5b6e319D869e4523876fcCF25aBAEfd4820Fd8C0",
+		"dataAddress": "0x5398A3465b9f05CD57e2d16f76032677f96396F7",
+		"appAddress": "0x0a0396c07807cE3C4B74EeEC0cA0A92666bA80fb",
 		"ownerAddress": "0x51f9378B809cb9485dF83beEEECF20b23792F161",
 		"startingAirlines": [
 			{
@@ -20,6 +20,23 @@
 			{
 				"name": "Third Airline",
 				"address": "0xc4F3F8EEb275Aa6558Eb5f0BD94059c82FE221f5"
+			}
+		],
+		"startingFlights": [
+			{
+				"name": "AL123",
+				"from": "FRA",
+				"to": "LHR"
+			},
+			{
+				"name": "AL456",
+				"from": "FRA",
+				"to": "JFK"
+			},
+			{
+				"name": "AL789",
+				"from": "FRA",
+				"to": "SYD"
 			}
 		],
 		"startingPassengers": [
