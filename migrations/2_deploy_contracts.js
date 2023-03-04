@@ -27,8 +27,6 @@ module.exports = function(deployer) {
                                 {name: "AL789", from: "FRA", to: "SYD"}
                                  
                             ],
-                            startingPassengers:['0x973d8841F108458107069A896E444abbb137A98C', 
-                                                '0x57cbc7D03B2A4c788a5FF3Aa3b202c825822fcb9'], //accounts[4] and //accounts[5]
                             oracleAddresses:['0xA2CAd9a05fe8B6942d7aCE68D7a72176a0e6838A',
                                             '0x6391ad5ff11aB19fABdB9BB530c287e4a0e0E66E',
                                             '0xbcA025101952eAA6fa6831dE704c59DC4535a744',

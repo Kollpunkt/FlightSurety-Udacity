@@ -35,10 +35,10 @@ contract FlightSuretyApp {
 
     //Funding requirement set in app contract and handed over into data contract
     //Risk assessment: because airline needs to be voted in (set in data contract) risk of being manipulated on way to data contract with low relevance
-    uint256 airlineFundingRequirement = 10;
+    uint256 airlineFundingRequirement = 10000000000000000000;
 
     uint256 payOutMultiple = 150;  // amount to be paid out = paid in amount * payOutMultiple / 100
-    uint256 maxInsurancePayOut = payOutMultiple.mul(10).div(100); // Requirement that max 1 ether is insured per passenger per flight 
+    uint256 maxInsurancePayOut = payOutMultiple.mul(1000000000000000000).div(100); // Requirement that max 1 ether is insured per passenger per flight 
     
     struct flightStructType {
     //    bytes32 flightID;
@@ -281,13 +281,14 @@ contract FlightSuretyApp {
         require(alreadyPaidIn.add(addPayOut) <= maxInsurancePayOut, "Additional insurance leads to overinsurance");
         flightSuretyData.buyInsurance{value: msg.value}(msg.sender, _flightID, addPayOut);
     }
-function withdrawApp       (
-                            )
-                            public
-                            requireIsOperational
-{
-    flightSuretyData.withdraw(msg.sender);
-}
+    
+    function withdrawApp       (
+                                )
+                                public
+                                requireIsOperational
+    {
+        flightSuretyData.withdraw(msg.sender);
+    }
 // region ORACLE MANAGEMENT
 
     // Incremented to add pseudo-randomness at various points
@@ -380,6 +381,7 @@ function withdrawApp       (
 
         return oracles[msg.sender].indexes;
     }
+
 
 
 

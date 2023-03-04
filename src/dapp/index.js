@@ -59,7 +59,6 @@ window.addEventListener('load', async () => {
 
     document.getElementById('contract-register-oracles').addEventListener('click', async () => {
         let registrationFee = document.getElementById('contract-registration-fee').value;
-        console.log(registrationFee)
         await contract.registerMultipleOracles(registrationFee);
     });
 
@@ -67,26 +66,48 @@ window.addEventListener('load', async () => {
     document.getElementById('airlines-register-airlines').addEventListener('click', async () => {
         let selectIndex = document.getElementById('airlines-airline-dropdown').value;
         let airline = await contract.getAirlineInfo(selectIndex);
-        console.log(selectIndex, airline[0], airline[1])
         await contract.registerAirline(airline[0], airline[1]);
     });
 
     document.getElementById('fund').addEventListener('click', async () => {
         let selectIndex = document.getElementById('airlines-airline-dropdown').value;
         let airline = await contract.getAirlineInfo(selectIndex);
-        console.log(selectIndex, airline[0], airline[1])
         let amount = document.getElementById('airlines-fund-amount').value;
         await contract.fundAirline(airline[0], amount);
     });
 
     // Flights section
+    document.getElementById('flights-register-flight').addEventListener('click', async () => {
+        let selectIndex = document.getElementById('flights-flights-dropdown').value;
+        let flight = await contract.getFlightInfo(selectIndex);
+        await contract.registerFlight(flight);
+    });
     document.getElementById('flights-request-oracles').addEventListener('click', async () => {
         let selectIndex = document.getElementById('flights-flights-dropdown').value;
         let flight = await contract.getFlightInfo(selectIndex);
-        console.log(selectIndex, flight)
-        //await contract.registerAirline(airline[0], airline[1]);
+        await contract.fetchFlightStatus(flight);
     });
 
+    // Passenger section
+    document.getElementById('passengers-insurance-button').addEventListener('click', async () => {
+        let selectIndex = document.getElementById('passengers-flights-dropdown').value;
+        let flight = await contract.getFlightInfo(selectIndex);
+        let amount = document.getElementById('passengers-insurance-amount').value;
+        console.log(flight, amount)
+        await contract.buyInsurance(flight, amount);
+    });
+    document.getElementById('passengers-withdraw-payout').addEventListener('click', async () => {
+        await contract.withdrawPayout();
+        let amount = await contract.getPayout();
+        document.getElementById('passengers-value-payout').value = amount;
+    });
+
+    document.getElementById('passengers-get-payout').addEventListener('click', async () => {
+        let amount = await contract.getPayout();
+        document.getElementById('passengers-value-payout').value = amount;
+        let amountDataContract = await contract.getFlightSuretyDataBalance();
+        console.log(amountDataContract);
+    });
 
     // document.getElementById('get-flight').addEventListener('click', async () => {
     //     let flightNumber = document.getElementById('flight-number').value;

@@ -37,9 +37,12 @@ export default class Contract {
             selectAirlines.options[selectAirlines.options.length] = new Option(this.airlines[counter].name+"("+this.airlines[counter].address.slice(0,8)+"...)", counter);
         }
 
-        var selectFlights = document.getElementById("flights-flights-dropdown");
-        for(let counter=0; counter<=2; counter++) {
-            selectFlights.options[selectFlights.options.length] = new Option(this.flights[counter].name+"("+this.flights[counter].from+" --> "+this.flights[counter].to+")", counter);
+        var selectFlights1 = document.getElementById("flights-flights-dropdown");
+        var selectFlights2 = document.getElementById("passengers-flights-dropdown");
+        for(let counter=0; counter<this.flights.length; counter++) {
+            selectFlights1.options[selectFlights1.options.length] = new Option(this.flights[counter].name+"("+this.flights[counter].from+" --> "+this.flights[counter].to+")", counter);
+            selectFlights2.options[selectFlights2.options.length] = new Option(this.flights[counter].name+"("+this.flights[counter].from+" --> "+this.flights[counter].to+")", counter);
+            //await this.registerFlight(this.flights[counter].name);
         }
     }
 
@@ -76,6 +79,20 @@ export default class Contract {
         }
     }
 
+    async registerFlight(flight) {
+        let self = this;
+        var success = true;
+        try {
+            self.flightSuretyApp.methods
+            .registerFlight(flight)
+            .send({ from: self.owner });
+        } catch(error){
+                    console.log(error);
+                    success = false;
+        };
+        if (success) {console.log('Flight registered: '+flight+' by '+self.owner);};
+    }
+
     async registerMultipleOracles(registrationFee) {
         let self = this;
         var success = true;
@@ -90,8 +107,17 @@ export default class Contract {
                     success = false;
         };
         if (success) {console.log('Oracles authorized: '+self.oracleAddresses+' by '+self.owner);};
+        const oraclesWithIndexes = [];
+        await self.oracleAddresses.forEach(async oracle => {
+            let indexes = await self.flightSuretyApp.methods.getMyIndexes().call({ from: self.oracleAddresses[0] });
+            console.log(oracle, indexes);
+            oraclesWithIndexes.push({address: oracle, indexes: indexes});    
+        })
+        console.log(oraclesWithIndexes);
     }
-
+    // async saveOraclesWithIndexes(oraclesWithIndexes) {
+    //     console.log(oraclesWithIndexes);
+    // } 
     async getDataContractAddress() {
         return this.flightSuretyData._address;
     }
@@ -112,6 +138,7 @@ export default class Contract {
                     success = false;
         };
         if (success) {console.log('App contract authorized to call data contract: '+self.appAddress+' by '+self.owner);};
+        self.updateContractInfo();
     }
 
     async updateContractInfo() {
@@ -126,20 +153,20 @@ export default class Contract {
         if (statusDataContract) {
             document.getElementById('contract-operational-status').value="Operational";
         } else {
-            document.getElementById('contract-operational-status').value="WARNING: Not operational";
+            document.getElementById('contract-operational-status').value="WARNING: Not connected or operational";
         }
 
 
     }
     async getAirlineInfo(index) {
         let self = this;
-        console.log(index, self.airlines[index].address, self.airlines[index].name)
+        //console.log(index, self.airlines[index].address, self.airlines[index].name)
         return [self.airlines[index].address, self.airlines[index].name];
     }
     async getFlightInfo(index) {
         let self = this;
-        console.log(index, self.flights[index].name)
-        return [self.flights[index].name];
+        //console.log(index, self.flights[index].name)
+        return self.flights[index].name;
     }
 
     
@@ -164,18 +191,32 @@ export default class Contract {
         };
     }
 
-    fetchFlightStatus(flight) {
+    async buyInsurance(flight, amountEther) {
         let self = this;
-        let payload = {
-            airline: self.airlines[0],
-            flight: flight,
-            timestamp: Math.floor(Date.now() / 1000)
-        } 
-        self.flightSuretyApp.methods
-            .fetchFlightStatus(payload.airline, payload.flight, payload.timestamp)
-            .send({ from: self.owner}, (error, result) => {
-                callback(error, payload);
+        let account = await self.getAccount();
+        let amountWei = self.web3.utils.toWei(amountEther, 'ether');
+        console.log(account+amountWei);
+        try {
+        await self.flightSuretyApp.methods.buyInsuranceApp(flight).send({ from: account, value: amountWei });
+        } catch(error){
+            console.error(error);
+        };
+    }
+
+    async fetchFlightStatus(flight) {
+        let self = this;
+        let success = false;
+        let timestamp= Math.floor(Date.now() / 1000);
+        try {
+            await self.flightSuretyApp.methods
+                .fetchFlightStatus(self.owner, flight, timestamp) //Flights are not linked to airlines in my implementation
+                .send({ from: self.owner}, (error, result) => {
             });
+            success = true;
+        } catch (error) {
+            console.log(error);
+        }
+        if (success) {console.log("Flight information requested for: "+flight)};
     }
 
     async getAccount() {
@@ -186,108 +227,33 @@ export default class Contract {
             console.log(error);
         }
     }
+    async withdrawPayout() {
+        let self = this;
+        let account = await self.getAccount();
+        let success = false;
+        try {
+            await self.flightSuretyApp.methods.withdrawApp().send({ from: account });
+            success = true;
+        } catch (error) {
+            console.log(error);
+        }
+        if (success) {console.log("Withdraw successful.")}
+    }
 
-    // async isDataContractOperational() {
-    //    let account = await this.getCurrentAccount();
-    //    return await this.flightSuretyData.methods.isOperational().call({ from: account});
-    // }
+    async getPayout() {
+        let self = this;
+        let account = await self.getAccount();
+        let success = false;
+        var balance = 0;
+        try {
+            var balance = await self.flightSuretyData.methods.getBalance(account).call({ from: account });
+            console.log(balance);
+            success = true;
+        } catch (error) {
+            console.log(error);
+        }
+        if (success) {console.log("Update of balance successful.")}
+        return self.web3.utils.fromWei(balance, 'ether');
+    }
 
-    // async isAppContractOperational(callback) {
-    //     let account = await this.getCurrentAccount();
-    //     return await this.flightSuretyApp.methods.isOperational().call({ from: account});
-    // }
-
-    // async setDataContractOperationalStatus(status) {
-    //     let account = await this.getCurrentAccount();
-    //     await this.flightSuretyData.methods.setOperationalStatus(status).send({ from: account});
-    // }
-
-    // async setAppContractOperationalStatus(status) {
-    //     let account = await this.getCurrentAccount();
-    //     await this.flightSuretyApp.methods.setOperationalStatus(status).send({ from: account});
-    // }
-
-    // async authorizeAddress(address) {
-    //     let account = await this.getCurrentAccount();
-    //     await this.flightSuretyData.methods.authorizeCaller(address).send({ from: account});    
-    // }
-
-    // async getAirline(airlineAddress) {
-    //     let account = await this.getCurrentAccount();
-    //     let result = await this.flightSuretyData.methods.getAirlineInformation(airlineAddress).call({ from: account});   
-    //     return {
-    //         name: result[0],
-    //         isRegistered: result[1],
-    //         isFunded: result[2],
-    //         fudnedAmount: this.web3.utils.fromWei(result[3], 'ether')
-    //     }
-    // }
-
-    // async registerAirline(airlineAddress, airlineName) {
-    //     let account = await this.getCurrentAccount();
-    //     await this.flightSuretyApp.methods.registerAirline(airlineAddress, airlineName).send({ from: account});
-    // }
-
-    // async fundAirline(airlineAddress, amount) {
-    //     let account = await this.getCurrentAccount();
-    //     let amountWei = this.web3.utils.toWei(amount, 'ether');
-    //     await this.flightSuretyApp.methods.fundAirline(airlineAddress).send({ from: account, value: amountWei });
-    // }
-
-    // async getFlight(flightNumber) {
-    //     let account = await this.getCurrentAccount();
-    //     let result = await this.flightSuretyData.methods.getFlightInformation(flightNumber).call({ from: account});  
-
-    //     let status = "Unknown";
-    //     switch (result[1]) {
-    //         case "10":
-    //             status = "On Time";
-    //             break;
-    //         case "20":
-    //             status = "Late Airline";
-    //             break;
-    //         case "30":
-    //             status = "Late Weather";
-    //             break;
-    //         case "40":
-    //             status = "Late Technical";
-    //             break;
-    //         case "50":
-    //             status = "Late Other";
-    //             break;
-    //     }
-    //     return {
-    //         isRegistered: result[0],
-    //         statusCode: status,
-    //         timestamp: result[2],
-    //         airline: result[3]
-    //     }
-    // }
-
-    // async registerFlight(flightNumber, dateTimestamp) {
-    //     let account = await this.getCurrentAccount();
-    //     await this.flightSuretyApp.methods.registerFlight(flightNumber, dateTimestamp).send({ from: account });
-    // }
-
-    // async requestFlightStatus(flightNumber) {
-    //     let account = await this.getCurrentAccount();
-    //     await this.flightSuretyApp.methods.requestFlightStatus(flightNumber).send({ from: account});
-    // }
-
-    // async buyInsurance(flightNumber, amount) {
-    //     let account = await this.getCurrentAccount();
-    //     let amountWei = this.web3.utils.toWei(amount, 'ether'); 
-    //     await this.flightSuretyApp.methods.buyInsurance(flightNumber).send({ from: account, value: amountWei });
-    // }
-
-    // async getBalance() {
-    //     let account = await this.getCurrentAccount();
-    //     let balance = await this.flightSuretyData.methods.getBalance().call({ from: account });
-    //     return this.web3.utils.fromWei(balance, 'ether');
-    // }
-
-    // async withdrawBalance() {
-    //     let account = await this.getCurrentAccount();
-    //     await this.flightSuretyApp.methods.withdraw().send({ from: account });
-    // }
 }

@@ -422,8 +422,7 @@ contract FlightSuretyData {
     function withdraw       (
                                 address _passenger
                             )
-                            public
-                            requireIsOperational
+                            external
                             requireCallerAuthorized
     {
         require(_passenger == tx.origin, "Withdraw request must originate from passenger itself.");

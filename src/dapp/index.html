@@ -18,7 +18,7 @@
             <btn class="btn btn-primary" id="contract-register-app-contract">Authorize App Contract</btn>&nbsp
         </div>
         <div class="top-20">   
-            <label class="form">Registration fee (ETH)</label><input type="text" id="contract-registration-fee" maxlength="6" size="4" value="0.01"/>
+            <label class="form">Registration fee (ETH)</label><input type="text" id="contract-registration-fee" maxlength="6" size="4" value="10"/>
             <btn class="btn btn-primary" id="contract-register-oracles">Register starting oracles</btn> 
         </div>
         
@@ -36,73 +36,42 @@
         </div>
         </div>
 
-        
-        <div id="display-wrapper" class="top-20"><br><br>
-        <h2>Flights Section</h2></div>
+
+        <div class="top-20"><br><br>
+            <h2>Flights Section</h2>
             <h4>Flight Status</h4>
         </div>
         <div class="top-20">
             <label class="form">Flight</label> 
             <select id="flights-flights-dropdown"></select>&nbsp;&nbsp;
-            <btn class="btn btn-primary" id="flights-request-oracles">Request Flight Status</btn>
+            <btn class="btn btn-primary" id="flights-register-flight">Register flight</btn>
+            <btn class="btn btn-primary" id="flights-request-oracles">Check flight status & insurance</btn>
         </div>
-        <div id="display-wrapper" class="top-20"><br><br></div>
-        <div id="display-wrapper" class="top-20">
-                <h2>Passenger Section</h2>
+        
+
+        <div class="top-20"><br><br>
+            <h2>Passenger Section</h2>
+            <h4>Insure flight</h4>
+
         </div>
-        <div class="row top-20"><h4>Purchase Flight Insurance</h4></div>
-        <div id="display-wrapper-insurance-info" class="top-20"></div>
-        <div id="display-wrapper-insurance-status" class="top-20"></div>
+        <div class="top-20"></div>
+            <label class="form">Flight</label>
+            <select id="passengers-flights-dropdown"></select>&nbsp;&nbsp;
+            <label class="form">Amount (ETH)</label><input type="text" id="passengers-insurance-amount" maxlength="4" size="4" value="1"/>&nbsp;&nbsp;
+            <btn class="btn btn-primary" id="passengers-insurance-button">Insure Flight</btn>
+            </div>
+        </div>
         <div class="top-20">
-            <div class="top-20">
-                <label class="form">Flight</label>
-                <select id="flights2"></select>&nbsp;&nbsp;
-                <div id="flightInfo2"></div>
-            </div>
-            <div class="row top-20">
-                <label class="form">Amount (ETH)</label><input type="text" id="insurance" maxlength="4" size="4" value="1"/>&nbsp;&nbsp;
-                <btn class="btn btn-primary" id="purchase">Purchase Insurance</btn>
-            </div>
+            <h4>Withdraw Insurance payout</h4>
+            <btn class="btn btn-primary" id="passengers-withdraw-payout">Withdraw Insurance Payout</btn>
         </div>
-        <div id="display-wrapper" class="top-20"><br><br></div>
-        <div class="row top-20"><h4>Claim Flight Insurance</h4></div>
-        <div class="row top-20"><h5>Check Flight Status</h5></div>
         <div class="top-20">
-            <label class="form">Flight</label> 
-            <select id="flights3"></select>&nbsp;&nbsp;
-            <div id="flightInfo3"></div>
-            <btn class="btn btn-primary" id="flight-status">Get Status</btn>
-            <div id="flightStatusInfo"></div>
-            <!--<btn class="btn btn-primary" id="claim-insurance">Claim Insurance</btn>-->
+            <h4>Get Withrawable Amount</h4>
+            <label class="form">Amount (ETH)</label><input type="text" id="passengers-value-payout" maxlength="4" size="4" value="" readonly/>&nbsp;&nbsp;
+            <btn class="btn btn-primary" id="passengers-get-payout">Update Withdrawable Amount</btn>
         </div>
-        <div id="display-claim-insurance" class="top-20">
-            <div>
-                <label class="form" id="passCredit">Passenger Insurance Credit : </label>
-                <label class="form" id="passCreditAmt"></label>
-                <btn class="btn btn-primary" id="checkCredit">Check Credit</btn>
-            </div>
-            <div><br><br></div>
-            <div>
-                <label class="form" id="passBal">Passenger Account Balance : </label>
-                <label class="form" id="passBalAmt"></label>
-                <btn class="btn btn-primary" id="getBalance">Get Balance</btn>
-            </div>
-        </div>
-        <div class="row top-20"><h4>Withdraw Insurance Credit</h4></div>
-        <div><btn class="btn btn-primary" id="withdraw">Withdraw</btn></div>
-        <div id="withdraw-status"></div>
     </main>
 
-    <!--
-    <main class="container">
-
-        <div id="display-wrapper" class="top-20">
-        </div>
-        <div class="row top-20">
-            <label class="form">Flight</label> <input type="text" id="flight-number"> <btn class="btn btn-primary" id="submit-oracle">Submit to Oracles</btn>
-        </div>
-    </main>
-    -->
 </body>
 
 </html>
