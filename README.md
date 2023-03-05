@@ -65,8 +65,8 @@ Use owner account for registration. Both buttons are in relation to airline sele
 ![truffle test](Readme_pics/Passenger_section.png)
 
 ## 5. Trigger fetching flight information from oracles and trigger insurance claim processing
-Go back to airline section and press button "Check flight status & insurance" with owner account
-![truffle test](Readme_pics/Airlines_section.png)
+Go back to "Flights section" and press button "Check flight status & insurance" with owner account
+![truffle test](Readme_pics/Flights_section.png)
 
 ## 6. Withdraw insurance pay out
 First "Update Withdrawable amount" with passenger account. Then "Withdraw Insurance Payout"
