@@ -36,7 +36,18 @@ module.exports = function(deployer) {
                                             '0xA063084879E5d19e7654fFB03c6eB9273f65196B',
                                             '0xd73B35f18e630fC6F7406A1310611c47c1b653d4',
                                             '0x1BaE2E8A3215a6F42c62E7Df5692da1717Ba9f1D',
-                                            '0x017BC042cd705F0845Df4aaa34950f342e280d58']
+                                            '0x017BC042cd705F0845Df4aaa34950f342e280d58',
+                                            '0x2F6E72494beDF510c3d8e4f472740Bfe9199A399',
+                                            '0x2EA817488E5F8c54b315d9bBBcDB60ae96D9960d',
+                                            '0x4984475420E55A53005D70caB4496088C07984a2',
+                                            '0x18aC4AC282A23f0f9d6a739DE6FF543d3ebce8F0',
+                                            '0xD86Ad1894366cB96A7B62e05B66724A9Be5fA306',
+                                            '0x9f7d5215159313f9BAF49b69F6258886ad17DBc6',
+                                            '0x2D95318372C88506087FE5c21474B9791292061a',
+                                            '0xcE83Bc7096C72CD9facE0F48B8b017de0801380f',
+                                            '0x5491aCD25A89d9C3229016eD0bc14A05aD4a7875',
+                                            '0x62F56B8801b288F83CA16F7BD34cb1d3E480981b',
+                                            '0x89fB0dD60B822b0CA2A229cEfB4E651E3bc9Ab0f']
                         }
                     }
                     fs.writeFileSync(__dirname + '/../src/dapp/config.json',JSON.stringify(config, null, '\t'), 'utf-8');

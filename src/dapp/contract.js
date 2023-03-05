@@ -109,7 +109,7 @@ export default class Contract {
         if (success) {console.log('Oracles authorized: '+self.oracleAddresses+' by '+self.owner);};
         const oraclesWithIndexes = [];
         await self.oracleAddresses.forEach(async oracle => {
-            let indexes = await self.flightSuretyApp.methods.getMyIndexes().call({ from: self.oracleAddresses[0] });
+            let indexes = await self.flightSuretyApp.methods.getMyIndexes().call({ from: oracle });
             console.log(oracle, indexes);
             oraclesWithIndexes.push({address: oracle, indexes: indexes});    
         })

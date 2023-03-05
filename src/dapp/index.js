@@ -105,7 +105,5 @@ window.addEventListener('load', async () => {
     document.getElementById('passengers-get-payout').addEventListener('click', async () => {
         let amount = await contract.getPayout();
         document.getElementById('passengers-value-payout').value = amount;
-        let amountDataContract = await contract.getFlightSuretyDataBalance();
-        console.log(amountDataContract);
     });
 });

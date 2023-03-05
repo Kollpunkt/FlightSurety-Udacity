@@ -47,12 +47,9 @@ Web3.js v1.8.2
 ## 0. Update (Ganache) accounts in 2_deploy_contract.js
 ![truffle test](Readme_pics/Update_2_deploy_contracts.js.png)
 
-## 1. Set up contracts
-![truffle test](Readme_pics/Contracts_section.png)
-### 1.1 Connect App contract to data contract
+## 1. Connect App contract to data contract
 Use owner account (=account that contracts were deployed from)
-### 1.2 Register oracles
-Depending on number of oracles in oracleAddress (see 2_deploy_contracts.js) update Amount to at least 1 Ether registration fee per Oracle
+![truffle test](Readme_pics/Contracts_section.png)
 
 ## 2. Register and fund airlines
 Use owner account for registration. Both buttons are in relation to airline selected in drop-down.
