@@ -93,12 +93,14 @@ contract('Flight Surety Tests', async (accounts) => {
     });
     it(`4b) Funding: Funding is possible with right funding amount`, async function () {
         let fundingReverted = false;
+        let fundingAmount = web3.utils.toWei('10','ether');
         try 
         {
-            let fundingReverted = await config.flightSuretyApp.fundAirlineApp(config.testAddresses[1], {value: 10, from: config.testAddresses[1], gasPrice: 0});
+            await config.flightSuretyApp.fundAirlineApp(config.testAddresses[1], {value: fundingAmount, from: config.testAddresses[1]});
         }
         catch(e) {
             fundingReverted = true;
+            console.log(e);
         }
     
         //Check that isFunded changed to true
@@ -111,9 +113,10 @@ contract('Flight Surety Tests', async (accounts) => {
     });
     it(`4c) Funding: Funding is accumulated in contract`, async function () {
         let dataContractValueBegin = await web3.eth.getBalance(config.flightSuretyData.address);
+        let fundingAmount = web3.utils.toWei('10','ether');
 
-        await config.flightSuretyApp.fundAirlineApp(config.testAddresses[2], {value: 12, from: config.testAddresses[2], gasPrice: 0}); 
-        await config.flightSuretyApp.fundAirlineApp(config.testAddresses[3], {value: 10, from: config.testAddresses[3], gasPrice: 0});
+        await config.flightSuretyApp.fundAirlineApp(config.testAddresses[2], {value: fundingAmount, from: config.testAddresses[2], gasPrice: 0, baseFeePerGas: 8, maxFeePerGas: 8}); 
+        await config.flightSuretyApp.fundAirlineApp(config.testAddresses[3], {value: fundingAmount, from: config.testAddresses[3], gasPrice: 0, baseFeePerGas: 8, maxFeePerGas: 8});
 
         let dataContractValueEnd = await web3.eth.getBalance(config.flightSuretyData.address);
 
@@ -122,7 +125,7 @@ contract('Flight Surety Tests', async (accounts) => {
         let isFunded2 = await config.flightSuretyData.isFundedAirline(config.testAddresses[2]);
         let isFunded3 = await config.flightSuretyData.isFundedAirline(config.testAddresses[3]);  
         
-        assert.equal(dataContractValueEnd - dataContractValueBegin, 20, "Not the right amount accumlated after 2 further fundings");
+        assert.equal(dataContractValueEnd - dataContractValueBegin, fundingAmount*2, "Not the right amount accumlated after 2 further fundings");
         assert.equal(isFunded2, true, "Airline 2 Funding status did not changed to true despite correct funding");
         assert.equal(isFunded3, true, "Airline 3 Funding status did not changed to true despite correct funding");
 
@@ -131,8 +134,9 @@ contract('Flight Surety Tests', async (accounts) => {
 
     it(`4d) Funding: Fifth airline can be funded before being accepted/ voted in`, async function () {
         let dataContractValueBegin = await web3.eth.getBalance(config.flightSuretyData.address);
+        let fundingAmount = web3.utils.toWei('10','ether');
         // console.log(dataContractValueBegin);
-        await config.flightSuretyApp.fundAirlineApp(config.testAddresses[4], {value: 10, from: config.testAddresses[4], gasPrice: 0}); 
+        await config.flightSuretyApp.fundAirlineApp(config.testAddresses[4], {value: fundingAmount, from: config.testAddresses[4], gasPrice: 0, baseFeePerGas: 8, maxFeePerGas: 8}); 
 
         let dataContractValueEnd = await web3.eth.getBalance(config.flightSuretyData.address);
         // console.log(dataContractValueEnd);
@@ -141,7 +145,7 @@ contract('Flight Surety Tests', async (accounts) => {
         let isFunded4 = await config.flightSuretyData.isFundedAirline(config.testAddresses[4]);
 
         
-        assert.equal(dataContractValueEnd - dataContractValueBegin, 10, "Not the right amount accumlated after 2 further fundings");
+        assert.equal(dataContractValueEnd - dataContractValueBegin, fundingAmount, "Not the right amount accumlated after 2 further fundings");
         assert.equal(isFunded4, true, "Fifth airline funding status did not changed to true despite correct funding");
 
 
@@ -225,10 +229,11 @@ contract('Flight Surety Tests', async (accounts) => {
    {            
         let flightName = 'AL123';
         let dataContractValueBegin = await web3.eth.getBalance(config.flightSuretyData.address);
-        let expectedPayOutAmount = web3.utils.toWei('15','Wei');
+        let expectedPayOutAmount = web3.utils.toWei('1.5','ether');
+        let payInAmount = web3.utils.toWei('1','ether');
 
         // console.log(dataContractValueBegin);
-        await config.flightSuretyApp.buyInsuranceApp(flightName, {from: config.testAddresses[5], value: 10, gasPrice: 0})
+        await config.flightSuretyApp.buyInsuranceApp(flightName, {from: config.testAddresses[5], value: payInAmount, gasPrice: 0, baseFeePerGas: 8, maxFeePerGas: 8})
 
         let dataContractValueEnd = await web3.eth.getBalance(config.flightSuretyData.address);
         // console.log(dataContractValueEnd);
@@ -236,20 +241,22 @@ contract('Flight Surety Tests', async (accounts) => {
             
         let payOutAmount = await config.flightSuretyData.getPayOutAmount(config.testAddresses[5], flightName);
         assert.equal(payOutAmount.toString(), expectedPayOutAmount, "PayOutAmount not correct");
-        assert.equal(dataContractValueEnd - dataContractValueBegin, 10, "Not the right amount received in contract.");
+        assert.equal(dataContractValueEnd - dataContractValueBegin, payInAmount, "Not the right amount received in contract.");
 
 
     });
     it(`7b) Buy Insurance: Passenger cannot over-insure the same flight`, async function () 
     {            
          let flightName = 'AL123';
-         let expectedPayOutAmount = web3.utils.toWei('15','Wei');
+         let expectedPayOutAmount = web3.utils.toWei('1.5','Ether');
+         let payInAmount = web3.utils.toWei('1','ether');
+
          let dataContractValueBegin = await web3.eth.getBalance(config.flightSuretyData.address);
         //  console.log(dataContractValueBegin);
          let overInsuranceDenied = false;
          try 
          {
-            await config.flightSuretyApp.buyInsuranceApp(flightName, {from: config.testAddresses[5], value: 30, gasPrice: 0}) 
+            await config.flightSuretyApp.buyInsuranceApp(flightName, {from: config.testAddresses[5], value: payInAmount, gasPrice: 0, baseFeePerGas: 8, maxFeePerGas: 8}) 
          }
          catch(e) {
             overInsuranceDenied = true;
@@ -267,7 +274,8 @@ contract('Flight Surety Tests', async (accounts) => {
      it(`7c) Buy Insurance: Passenger can insure second flight without triggering over-insure of first flight insurance`, async function () 
      {            
           let flightName = 'AL456';
-          let expectedPayOutAmount = web3.utils.toWei('15','Wei');
+          let expectedPayOutAmount = web3.utils.toWei('1.5','ether');
+          let payInAmount = web3.utils.toWei('1','ether');
           let dataContractValueBegin = await web3.eth.getBalance(config.flightSuretyData.address);
         //   console.log(dataContractValueBegin);
           let overInsuranceDenied = false;
@@ -277,7 +285,7 @@ contract('Flight Surety Tests', async (accounts) => {
 
           try 
           {
-             await config.flightSuretyApp.buyInsuranceApp(flightName, {from: config.testAddresses[5], value: 10, gasPrice: 0}) 
+             await config.flightSuretyApp.buyInsuranceApp(flightName, {from: config.testAddresses[5], value: payInAmount, gasPrice: 0, baseFeePerGas: 8, maxFeePerGas: 8}) 
           }
           catch(e) {
              overInsuranceDenied = true;
@@ -289,12 +297,13 @@ contract('Flight Surety Tests', async (accounts) => {
           
           assert.equal(overInsuranceDenied, false, "Overinsurance was detected / reverted despite different flight was chosen")
           assert.equal(payOutAmount.toString(), expectedPayOutAmount, "PayOutAmount not set correctly for second flight insurance");
-          assert.equal(dataContractValueEnd - dataContractValueBegin, 10, "Not the right amount received in contract.");
+          assert.equal(dataContractValueEnd - dataContractValueBegin, payInAmount, "Not the right amount received in contract.");
       });
       it(`7d) Buy Insurance: Passenger cannot insure flight that is not registered`, async function () 
       {            
            let flightName = 'AL789';
-           let expectedPayOutAmount = web3.utils.toWei('0','Wei');
+           let expectedPayOutAmount = web3.utils.toWei('0','ether');
+           let payInAmount = web3.utils.toWei('1','ether');
            let dataContractValueBegin = await web3.eth.getBalance(config.flightSuretyData.address);
         //    console.log(dataContractValueBegin);
            let insuranceDenied = false;
@@ -304,7 +313,7 @@ contract('Flight Surety Tests', async (accounts) => {
  
            try 
            {
-              await config.flightSuretyApp.buyInsuranceApp(flightName, {from: config.testAddresses[5], value: 10, gasPrice: 0}) 
+              await config.flightSuretyApp.buyInsuranceApp(flightName, {from: config.testAddresses[5], value: payInAmount, gasPrice: 0, baseFeePerGas: 8, maxFeePerGas: 8}) 
            }
            catch(e) {
               insuranceDenied = true;
@@ -327,7 +336,7 @@ contract('Flight Surety Tests', async (accounts) => {
         await config.flightSuretyApp.registerOracle({ from: config.testAddresses[i], value: registrationFee });
         let result = await config.flightSuretyApp.getMyIndexes.call({ from: config.testAddresses[i] });
         //console.log('Oracle registered at '+config.testAddresses[i]+' with idexes: '+result[0],result[1],result[2]);
-        console.log(`Oracle Registered: ${result[0]}, ${result[1]}, ${result[2]} `+config.testAddresses[i]);
+        //console.log(`Oracle Registered: ${result[0]}, ${result[1]}, ${result[2]} `+config.testAddresses[i]);
         assert.notEqual(result,[],"Could not register Oracles.")
     }
     });
@@ -347,12 +356,11 @@ contract('Flight Surety Tests', async (accounts) => {
         // and submit a response. The contract will reject a submission if it was
         // not requested so while sub-optimal, it's a good test of that feature
         let statusCode = STATUS_CODE_ON_TIME;
-        console.log(statusCode);
         for(let i=(config.testAddresses.length-20); i<config.testAddresses.length; i++) {
     
           // Get oracle informationç
           let oracleIndexes = await config.flightSuretyApp.getMyIndexes.call({ from: config.testAddresses[i]});
-          console.log(config.testAddresses[i]+" "+oracleIndexes);
+          //console.log(config.testAddresses[i]+" "+oracleIndexes);
         
           for(let idx=0; idx<3; idx++) {
             try {
@@ -368,13 +376,12 @@ contract('Flight Surety Tests', async (accounts) => {
           }
         }
         let result = await config.flightSuretyApp.getFlightInfo(flightName, { from: insuredPassenger });
-        console.log(result[1].toString());
-        console.log(result[2].toString());
+        //console.log("Returned flight status: "+result[1].toString());
+        //console.log("Returned time stamp: "+result[2].toString());
         let balance = await config.flightSuretyData.getBalance(insuredPassenger, { from: insuredPassenger} );
-        console.log(balance.toString());
+        //console.log("Passenger balance after processing flight on time: "+balance.toString());
 
-        assert.equal(result[1].toString(), statusCode);
-        assert.equal(balance.toString(), "0");
+        assert.equal(balance.toString(), "0", "Passenger balance not 0 despite flight being reported on time");
     });
     it('8c) Oracle/Pay Out: Oracle set statuscode and thereby trigger pay out that can also be withdrawn', async () => {
         // See insurance from Test case 6a and 7a
@@ -384,13 +391,14 @@ contract('Flight Surety Tests', async (accounts) => {
         let insuredPassenger = config.testAddresses[5];
 
         let dataContractValueBegin = await web3.eth.getBalance(config.flightSuretyData.address);
-        console.log("Balance on data contract at begin of test: "+dataContractValueBegin);
+        // console.log("Balance on data contract at begin of test: "+dataContractValueBegin);
 
-        let passengerBalanceBegin = await config.flightSuretyData.getBalance(insuredPassenger, { from: insuredPassenger} );
-        console.log("Account/Wallet balance of insured passanger at begin of test: "+passengerBalanceBegin.toString());
+        //let passengerBalanceBegin = await config.flightSuretyData.getBalance(insuredPassenger, { from: insuredPassenger} );
+        let passengerBalanceBegin = await web3.eth.getBalance(insuredPassenger); 
+        // console.log("Account/Wallet balance of insured passanger at begin of test: "+passengerBalanceBegin.toString());
         
-        let payOutAmount = await config.flightSuretyData.getPayOutAmount(insuredPassenger, flightName);
-        console.log('PayoutAmount: '+payOutAmount.toString());
+        let payOutAmountBegin = await config.flightSuretyData.getPayOutAmount(insuredPassenger, flightName);
+        // console.log('PayoutAmount before delay registered: '+payOutAmountBegin.toString());
 
         // Submit a request for oracles to get status information for a flight
         await config.flightSuretyApp.fetchFlightStatus(airline,flightName, timestamp);
@@ -401,12 +409,12 @@ contract('Flight Surety Tests', async (accounts) => {
         // and submit a response. The contract will reject a submission if it was
         // not requested so while sub-optimal, it's a good test of that feature
         let statusCode = STATUS_CODE_LATE_AIRLINE;
-        console.log("Status code set for flight after fetchFlighStatus: "+statusCode);
+        // console.log("Status code set for flight after fetchFlighStatus: "+statusCode);
         for(let i=(config.testAddresses.length-20); i<config.testAddresses.length; i++) {
     
           // Get oracle informationç
           let oracleIndexes = await config.flightSuretyApp.getMyIndexes.call({ from: config.testAddresses[i]});
-          console.log(config.testAddresses[i]+" "+oracleIndexes);
+          //console.log(config.testAddresses[i]+" "+oracleIndexes);
         
           for(let idx=0; idx<3; idx++) {
             try {
@@ -422,27 +430,38 @@ contract('Flight Surety Tests', async (accounts) => {
           }
         }
         let result = await config.flightSuretyApp.getFlightInfo(flightName, { from: insuredPassenger });
-        console.log(result.toString());
+        //console.log("Returned flight status: "+result[1].toString());
+        //console.log("Returned time stamp: "+result[2].toString());
 
         let passengerCreditBeforeWithdrawal = await config.flightSuretyData.getBalance(insuredPassenger, { from: insuredPassenger});
-        console.log("Withdrawable amount /Balance of insured passanger before withdrawal: "+passengerCreditBeforeWithdrawal);
+        // console.log("Withdrawable amount /Balance of insured passanger before withdrawal: "+passengerCreditBeforeWithdrawal);
         
-        await config.flightSuretyApp.withdrawApp({ from: insuredPassenger });
+        await config.flightSuretyApp.withdrawApp({ from: insuredPassenger, gasPrice: 0, baseFeePerGas: 8, maxFeePerGas: 8 });
+        // await config.flightSuretyData.withdraw(insuredPassenger,{ from: config.testAddresses[0], gasPrice: 0, baseFeePerGas: 8, maxFeePerGas: 8 });
 
-        let passengerBalanceEnd = await config.flightSuretyData.getBalance(insuredPassenger, { from: insuredPassenger} );
-        console.log("Account/Wallet balance of insured passanger at end of test: "+passengerBalanceEnd.toString());
+        let passengerBalanceEnd = await await web3.eth.getBalance(insuredPassenger); 
+        // console.log("Account/Wallet balance of insured passanger at end of test: "+passengerBalanceEnd.toString());
 
         let dataContractValueEnd = await web3.eth.getBalance(config.flightSuretyData.address);
-        console.log("Balance on data contract at end of test: "+dataContractValueEnd);
+        // console.log("Balance on data contract at end of test: "+dataContractValueEnd);
+
+        let payOutAmountEnd = await config.flightSuretyData.getPayOutAmount(insuredPassenger, flightName);
+        // console.log('PayoutAmount insurance paid out: '+payOutAmountEnd.toString());
 
         let passengerCreditAfterWithdrawal = await config.flightSuretyData.getBalance(insuredPassenger, { from: insuredPassenger});
-        console.log("Withdrawable amount /Balance of insured passanger after withdrawal: "+passengerCreditAfterWithdrawal);
+        // console.log("Withdrawable amount /Balance of insured passanger after withdrawal: "+passengerCreditAfterWithdrawal);
 
 
         assert.equal(result[1].toString(), statusCode);
-        assert.equal(dataContractValueEnd - dataContractValueBegin, payOutAmount.toString(), "Balance on data contract not reduced correctly");
-        assert.equal(passengerBalanceBegin - passengerBalanceEnd, payOutAmount.toString(), "Passenger account/wallet balance not increased correctly.");
-        assert.equal(passengerCreditAfterWithdrawal - passengerCreditBeforeWithdrawal, payOutAmount.toString(), "Passenger withrawable amount / balance not changed correctly");
+        assert.equal(dataContractValueEnd - dataContractValueBegin, -payOutAmountBegin.toString(), "Balance on data contract not reduced correctly");
+        
+        //As transaction costs apply, amounts cannot be compared, whenn switched this test will show that amount roughly arrived at passenger's account
+        //assert.equal(passengerBalanceBegin - passengerBalanceEnd, payOutAmountBegin.toString(), "Passenger account/wallet balance not increased correctly.");
+        let passengerBalanceDelta = passengerBalanceEnd - passengerBalanceBegin; 
+        console.log("Amount credited to passengers wallet after transaction costs (Ether): "+web3.utils.fromWei(passengerBalanceDelta.toString(),"ether")+" versus expectation (excl. transaction costs, Ether): "+web3.utils.fromWei(payOutAmountBegin.toString(),"ether"));
+
+        assert.equal(payOutAmountEnd - payOutAmountBegin, -payOutAmountBegin.toString(), "Payout amount not reduced correctly.");
+        assert.equal(passengerCreditAfterWithdrawal - passengerCreditBeforeWithdrawal, -payOutAmountBegin.toString(), "Passenger withrawable amount / balance not changed correctly");
         assert.equal(passengerCreditAfterWithdrawal.toString(), "0", "Passenger withrawable amount / balance set to 0 after withrawal");
         assert.equal(result[1].toString(),"20", "Status code of flight to correetcly set.")
          

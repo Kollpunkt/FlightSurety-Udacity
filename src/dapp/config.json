@@ -1,8 +1,8 @@
 {
 	"localhost": {
 		"url": "http://localhost:7545",
-		"dataAddress": "0xE325273948031Aef13564f8975368018194461eF",
-		"appAddress": "0x2eba26C9a4e25C14d8Bc6440703CE6F1764C56F8",
+		"dataAddress": "0x12069E5D96ca0EAF2ee756674cc51Fd8fE53D50d",
+		"appAddress": "0x9ccF3eedFde3e64897bFddD10B259603Db4a53F8",
 		"ownerAddress": "0x51f9378B809cb9485dF83beEEECF20b23792F161",
 		"startingAirlines": [
 			{
@@ -38,10 +38,6 @@
 				"from": "FRA",
 				"to": "SYD"
 			}
-		],
-		"startingPassengers": [
-			"0x973d8841F108458107069A896E444abbb137A98C",
-			"0x57cbc7D03B2A4c788a5FF3Aa3b202c825822fcb9"
 		],
 		"oracleAddresses": [
 			"0xA2CAd9a05fe8B6942d7aCE68D7a72176a0e6838A",

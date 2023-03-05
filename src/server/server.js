@@ -42,7 +42,7 @@ flightSuretyApp.events.OracleRequest({fromBlock: 0}, async function (error, even
       statusCode = STATUS_CODE_LATE_OTHER;
     }
     //Overruling for testing
-    statusCode=20;
+    //statusCode=20;
     
     config.oracleAddresses.forEach(async oracle => {
         let indexes = await flightSuretyApp.methods.getMyIndexes().call({ from: oracle });

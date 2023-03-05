@@ -16,7 +16,10 @@ To install, download or clone the repo, then:
 To run truffle tests:
 
 `truffle test ./test/flightSurety.js`
+![truffle test](Readme_pics/Tests.png)
+
 `truffle test ./test/oracles.js`
+
 
 To use the dapp:
 
@@ -32,21 +35,35 @@ To view dapp:
 `npm run server`
 `truffle test ./test/oracles.js`
 
-## Deploy
+## Environment used
+Truffle v5.7.7 (core: 5.7.7)
+Ganache v7.7.5
+Solidity - ^0.8.17 (solc-js)
+Node v14.21.2
+Web3.js v1.8.2
 
-To build dapp for prod:
-`npm run dapp:prod`
+# Usage of Dapp
 
-Deploy the contents of the ./dapp folder
+## 0. Update (Ganache) accounts in 2_deploy_contract.js
 
 
-## Resources
+## 1. Set up contracts
 
-* [How does Ethereum work anyway?](https://medium.com/@preethikasireddy/how-does-ethereum-work-anyway-22d1df506369)
-* [BIP39 Mnemonic Generator](https://iancoleman.io/bip39/)
-* [Truffle Framework](http://truffleframework.com/)
-* [Ganache Local Blockchain](http://truffleframework.com/ganache/)
-* [Remix Solidity IDE](https://remix.ethereum.org/)
-* [Solidity Language Reference](http://solidity.readthedocs.io/en/v0.4.24/)
-* [Ethereum Blockchain Explorer](https://etherscan.io/)
-* [Web3Js Reference](https://github.com/ethereum/wiki/wiki/JavaScript-API)
+### 1.1 Connect App contract to data contract with owner user
+### 1.2 Register oracles
+Depending on number of oracles in oracleAddress (see 2_deploy_contracts.js) update Amount to at least 1 Ether registration fee per Oracle
+
+## 2. Register and fund airlines
+Use owner account for registration. Both buttons are in relation to airline selected in drop-down.
+
+## 3. Register flight
+
+## 4. Buy Insurance
+
+## 5. Trigger fetching flight information from oracles and trigger insurance claim processing
+Go back to airline section and press button "Check flight status & insurance" with owner account
+
+## 6. Withdraw insurance pay out
+First "Update Withdrawable amount" with passenger account. Then "Withdraw Insurance Payout"
+
+

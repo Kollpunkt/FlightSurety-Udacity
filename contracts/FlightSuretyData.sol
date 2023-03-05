@@ -422,7 +422,8 @@ contract FlightSuretyData {
     function withdraw       (
                                 address _passenger
                             )
-                            external
+                            public
+                            payable
                             requireCallerAuthorized
     {
         require(_passenger == tx.origin, "Withdraw request must originate from passenger itself.");
@@ -431,7 +432,11 @@ contract FlightSuretyData {
         uint256 credit = passengers[_passenger].credit;
         passengers[_passenger].credit = 0;
         
-        payable(_passenger).transfer(credit);
+        //(bool sent, bytes memory data) = payable(_passenger).call{value: credit}("PayOut for Insurance");
+
+        //payable(_passenger).transfer(credit);
+        bool sent = payable(_passenger).send(credit);
+        require(sent, "Failed to send Ether");
 
         emit CreditPaidOut(_passenger, credit);
 
