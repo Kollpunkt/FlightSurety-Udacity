@@ -48,22 +48,27 @@ Web3.js v1.8.2
 ![truffle test](Readme_pics/Update_2_deploy_contracts.js.png)
 
 ## 1. Set up contracts
-![truffle test](Readme_pics/Contracts section.png)
-### 1.1 Connect App contract to data contract with owner user
+![truffle test](Readme_pics/Contracts_section.png)
+### 1.1 Connect App contract to data contract
+Use owner account (=account that contracts were deployed from)
 ### 1.2 Register oracles
 Depending on number of oracles in oracleAddress (see 2_deploy_contracts.js) update Amount to at least 1 Ether registration fee per Oracle
 
 ## 2. Register and fund airlines
 Use owner account for registration. Both buttons are in relation to airline selected in drop-down.
-![truffle test](Readme_pics/Airlines section.png)
+![truffle test](Readme_pics/Airlines_section.png)
+
 ## 3. Register flight
-![truffle test](Readme_pics/Flights section.png)
+![truffle test](Readme_pics/Flights_section.png)
+
 ## 4. Buy Insurance
-![truffle test](Readme_pics/Passenger section.png)
+![truffle test](Readme_pics/Passenger_section.png)
+
 ## 5. Trigger fetching flight information from oracles and trigger insurance claim processing
 Go back to airline section and press button "Check flight status & insurance" with owner account
-![truffle test](Readme_pics/Airlines section.png)
+![truffle test](Readme_pics/Airlines_section.png)
+
 ## 6. Withdraw insurance pay out
 First "Update Withdrawable amount" with passenger account. Then "Withdraw Insurance Payout"
-![truffle test](Readme_pics/Passenger section.png)
+![truffle test](Readme_pics/Passenger_section.png)
 
